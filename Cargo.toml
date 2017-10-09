@@ -1,0 +1,13 @@
+[package]
+name = "list-routines"
+version = "0.1.0"
+authors = ["Lucas Morales <lucas@lucasem.com>"]
+
+[dependencies]
+lazy_static = "0.2"
+serde_derive = "1.0"
+serde = "1.0"
+serde_json = "1.0"
+regex = "0.2"
+futures = "0.1"
+hyper = "0.11"

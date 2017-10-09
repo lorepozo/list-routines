@@ -1,0 +1,102 @@
+class ListRoutineStore {
+  get(
+    count, // Uint
+
+    /* OPTIONAL */
+    relatedTo,    // Set<Concept>
+    notRelatedTo, // Set<Concept>
+    dependsOn,    // Set<Concept>
+    notDependsOn, // Set<Concept>
+  ) // -> Set<ListRoutine>
+
+  insert(
+    routine, // ListRoutine
+  )
+
+  updateDepends(
+    routineID, // Integer
+    s, // Set<Concept>
+  )
+  updateRelated(
+    routineID, // Integer
+    s, // Set<Concept>
+  )
+}
+
+class ListRoutine {
+  constructor(
+    /// routine is executed in lisp sandbox with many useful functions.
+    routine, // SExp<LRType -> LRType>
+    /// generator constructs a task using a random-number-generator.
+    generator, // RNG -> LRTask
+
+    /* OPTIONAL */
+    /// description is a short human-readable description of the routine.
+    description, // String
+    /// documentation is an extended human-readable explanation of the routine.
+    /// This is where you should specify how to give parameters, if applicable.
+    documentation, // String
+    /// validator checks if an input to the routine is valid.
+    validator, // SExp<LRType -> bool>
+    /// examples lets the ListRoutine store key examples.
+    examples, // Set<LRTask>
+    /// exampleParameters can be supplied INSTEAD of examples. These parameters
+    /// are given to the parameterizedGenerator to construct randomized examples.
+    /// If used, parameterizedGenerator must be set.
+    exampleParameters // Set<LRType>
+    /// parameterizedGenerator is like generator, but also takes a parameter.
+    /// The generator can return None if the parameter is deemed invalid.
+    parameterizedGenerator, // SExp<(RNG, LRType) -> Option<LRTask>>
+  )
+
+  /// id gets a unique identifier (generated automatically upon routine creation)
+  id() // Integer
+
+  description() // Option<String>
+  documentation() // Option<String>
+
+  /// evaluate returns None if the input failed to validate.
+  evaluate(
+    input, // LRType
+  ) // -> Option<LRType>
+
+  examples() // -> Set<LRTask>
+
+  /// generate fails if a parameter is supplied but the 
+  generate(
+    /* OPTIONAL */
+    count, // Integer
+    parameter, // LRType
+  ) // -> LRTask
+
+  depends() // -> Set<Concept>
+  related() // -> Set<Concept>
+
+  updateDepends(
+    s, // Set<Concept>
+  )
+  updateRelated(
+    s, // Set<Concept>
+  )
+}
+
+enum LRTypeIN {
+  Number,
+  List<Number>,
+  List<List<Number>>,
+}
+
+enum LRTypeOut {
+  Boolean,
+  Number,
+  List<Number>,
+}
+
+class LRTask {
+  constructor(
+    input,  // LRType
+    output, // LRType
+  )
+}
+
+// vim:ft=javascript
