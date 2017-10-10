@@ -1,120 +1,125 @@
+#![feature(plugin,custom_derive,decl_macro)]
+#![plugin(rocket_codegen)]
+
 #[macro_use]
 extern crate lazy_static;
+extern crate rocket;
+extern crate serde;
 #[macro_use]
 extern crate serde_derive;
 #[macro_use]
 extern crate serde_json;
-extern crate serde;
-extern crate regex;
-extern crate futures;
-extern crate hyper;
 
-mod store;
 mod routine;
 
-use regex::Regex;
-use futures::future::{self, Future};
-use futures::Stream;
-use hyper::server::{Http, Request, Response, Service};
-use hyper::{Method, StatusCode};
+use rocket::{http, request, response};
+use rocket::response::{Response, Responder};
+use routine::{store, Input, Routine};
 
-use store::ListRoutineStore;
+const DEFAULT_FIND_COUNT: u32 = 1;
+const DEFAULT_GENERATE_COUNT: u32 = 1;
+
+#[derive(Clone, Debug)]
+struct JsonResponse(http::Status, serde_json::Value);
+impl<'r> Responder<'r> for JsonResponse {
+    fn respond_to(self, _: &request::Request) -> response::Result<'r> {
+        Ok(
+            Response::build()
+                .status(self.0)
+                .header(http::ContentType::JSON)
+                .sized_body(std::io::Cursor::new(self.1.to_string()))
+                .finalize(),
+        )
+    }
+}
 
 lazy_static! {
-    static ref FIND_RE: Regex = Regex::new(r#"^/find(/(?P<count>\d+))?$"#).unwrap();
-    static ref GEN_RE: Regex = Regex::new(r#"^/gen/(?P<id>\w+)$"#).unwrap();
-    static ref EVAL_RE: Regex = Regex::new(r#"^/eval/(?P<id>\w+)$"#).unwrap();
+    static ref JSON_INTERNAL_SERVER_ERROR: serde_json::Value = json!({"error": "internal server error"});
+    static ref JSON_NOT_FOUND: serde_json::Value = json!({"error": "not found"});
+    static ref JSON_BAD_REQUEST: serde_json::Value = json!({"error": "bad request"});
+}
+fn response_internal_server_error() -> JsonResponse {
+    JsonResponse(
+        http::Status::InternalServerError,
+        JSON_INTERNAL_SERVER_ERROR.clone(),
+    )
+}
+fn response_not_found() -> JsonResponse {
+    JsonResponse(http::Status::NotFound, JSON_NOT_FOUND.clone())
+}
+fn response_bad_request() -> JsonResponse {
+    JsonResponse(http::Status::BadRequest, JSON_BAD_REQUEST.clone())
+}
+fn response_ok<T: serde::Serialize>(v: T) -> JsonResponse {
+    serde_json::to_value(v)
+        .map(|j| JsonResponse(http::Status::Ok, j))
+        .unwrap_or_else(|_| response_internal_server_error())
 }
 
-struct PathError<'a> {
-    path: &'a str,
-}
-impl<'a> PathError<'a> {
-    fn new(path: &'a str) -> Self {
-        Self { path }
-    }
-}
-impl<'a> From<PathError<'a>> for Response {
-    fn from(pe: PathError<'a>) -> Response {
-        let code = StatusCode::NotFound;
-        let msg = json!({
-            "error": {
-                "details": format!("invalid path: {}", pe.path),
-                "status": code.as_u16()
-            }
-        }).to_string();
-        Response::new().with_body(msg).with_status(code)
-    }
+#[derive(FromForm)]
+struct FindForm {
+    count: Option<u32>,
 }
 
-macro_rules! basic_error {
-    ($name:ident, $code:expr, $details:expr) => {
-        struct $name;
-        impl From<$name> for Response {
-            fn from(_: $name) -> Response {
-                let code = $code;
-                let msg = json!({
-                    "error": {
-                        "details": $details,
-                        "status": code.as_u16()
-                    }
-                }).to_string();
-                Response::new().with_body(msg).with_status(code)
-            }
-        }
-    }
+#[derive(FromForm)]
+struct GenerateForm {
+    count: Option<u32>,
 }
 
-basic_error!(BadRequest,
-             StatusCode::BadRequest,
-             "bad request");
+#[get("/find?<form>")]
+fn find(form: FindForm) -> JsonResponse {
+    store::find(form.count.unwrap_or(DEFAULT_FIND_COUNT))
+        .map(response_ok)
+        .unwrap_or_else(|_| response_internal_server_error())
+}
 
-basic_error!(InvalidInputError,
-             StatusCode::BadRequest,
-             "invalid routine input");
+#[get("/examples/<id>")]
+fn examples(id: String) -> JsonResponse {
+    Routine::open(id)
+        .map_err(|_| response_not_found())
+        .and_then(|routine| {
+            routine
+                .examples()
+                .map_err(|_| response_internal_server_error())
+                .map(response_ok)
+        })
+        .unwrap_or_else(|e| e)
+}
 
-basic_error!(InternalServerError,
-             StatusCode::InternalServerError,
-             "internal server error");
+#[get("/gen/<id>?<form>")]
+fn gen(id: String, form: GenerateForm) -> JsonResponse {
+    Routine::open(id)
+        .map_err(|_| response_not_found())
+        .and_then(|routine| {
+            routine
+                .generate(form.count.unwrap_or(DEFAULT_GENERATE_COUNT))
+                .map_err(|_| response_internal_server_error())
+                .map(response_ok)
+        })
+        .unwrap_or_else(|e| e)
+}
 
-impl Service for ListRoutineStore {
-    type Error = hyper::Error;
-    type Request = Request;
-    type Response = Response;
-    type Future = Box<Future<Item = Self::Response, Error = Self::Error>>;
+#[post("/eval/<id>", data = "<input>")]
+fn eval(id: String, input: Input) -> JsonResponse {
+    Routine::open(id)
+        .map_err(|_| response_not_found())
+        .and_then(|routine| {
+            routine
+                .execute(input)
+                .map_err(|_| response_internal_server_error())
+                .and_then(|output| output.ok_or_else(response_bad_request).map(response_ok))
+        })
+        .unwrap_or_else(|e| e)
+}
 
-    fn call(&self, req: Request) -> Self::Future {
-        match req.method() {
-            &Method::Post => {
-                let path = req.path().to_string();
-
-                if let Some(caps) = EVAL_RE.captures(&path) {
-                    let id = caps.name("id").unwrap().as_str();
-                    // TODO: cap input
-                    Box::new(req.body().concat2().and_then(|inp| {
-                        self.evaluate(id, &*inp)
-                            .map(|o| if let Some(out) = o {
-                                if let Ok(serialized) = serde_json::to_string(&out) {
-                                    Response::new().with_body(serialized)
-                                } else {
-                                    InternalServerError.into()
-                                }
-                            } else {
-                                InvalidInputError.into()
-                            })
-                            .or_else(|_| future::ok(BadRequest.into())) // TODO: be more precise
-                    }))
-                } else {
-                    Box::new(future::ok(PathError::new(req.path()).into()))
-                }
-            }
-            _ => Box::new(future::ok(PathError::new(req.path()).into())),
-        }
-    }
+#[catch(404)]
+fn not_found() -> JsonResponse {
+    response_not_found()
 }
 
 fn main() {
-    let addr = "127.0.0.1:3000".parse().unwrap();
-    let server = Http::new().bind(&addr, || Ok(ListRoutineStore)).unwrap();
-    server.run().unwrap();
+    rocket::ignite()
+        .mount("/", routes![find, gen, examples, eval])
+        .catch(catchers![not_found])
+        .launch();
 }
