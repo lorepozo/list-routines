@@ -56,12 +56,12 @@ fn response_ok<T: serde::Serialize>(v: T) -> JsonResponse {
         .unwrap_or_else(|_| response_internal_server_error())
 }
 
-#[derive(FromForm)]
+#[derive(Copy,Clone,FromForm)]
 struct FindForm {
     count: Option<u32>,
 }
 
-#[derive(FromForm)]
+#[derive(Copy,Clone,FromForm)]
 struct GenerateForm {
     count: Option<u32>,
 }
@@ -112,14 +112,22 @@ fn eval(id: String, input: Input) -> JsonResponse {
         .unwrap_or_else(|e| e)
 }
 
+#[catch(400)]
+fn bad_request() -> JsonResponse {
+    response_bad_request()
+}
 #[catch(404)]
 fn not_found() -> JsonResponse {
     response_not_found()
+}
+#[catch(500)]
+fn internal_server_error() -> JsonResponse {
+    response_internal_server_error()
 }
 
 fn main() {
     rocket::ignite()
         .mount("/", routes![find, gen, examples, eval])
-        .catch(catchers![not_found])
+        .catch(catchers![bad_request, not_found, internal_server_error])
         .launch();
 }
