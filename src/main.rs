@@ -52,7 +52,7 @@ fn response_bad_request() -> JsonResponse {
 }
 fn response_ok<T: serde::Serialize>(v: T) -> JsonResponse {
     serde_json::to_value(v)
-        .map(|j| JsonResponse(http::Status::Ok, j))
+        .map(|j| JsonResponse(http::Status::Ok, json!({"result": j})))
         .unwrap_or_else(|_| response_internal_server_error())
 }
 
