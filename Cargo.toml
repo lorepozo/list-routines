@@ -4,6 +4,7 @@ version = "0.1.0"
 authors = ["Lucas Morales <lucas@lucasem.com>"]
 
 [dependencies]
+itertools = "0.7.1"
 lazy_static = "0.2"
 rocket = { path = "../Rocket/lib" }
 rocket_codegen = { path = "../Rocket/codegen" }
