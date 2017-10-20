@@ -70,7 +70,7 @@ fn find(mgr: State<Manager>, form: FindForm) -> JsonResponse {
                 json!({"error": "find operation failed"}),
             )
         })
-        .map(|v| v.into())
+        .map(Into::into)
         .unwrap_or_else(|e| e)
 }
 
@@ -89,7 +89,7 @@ fn examples(mgr: State<Manager>, id: String) -> JsonResponse {
                         }),
                     )
                 })
-                .map(|v| v.into())
+                .map(Into::into)
         })
         .unwrap_or_else(|e| e)
 }
@@ -109,7 +109,7 @@ fn gen(mgr: State<Manager>, id: String, form: GenerateForm) -> JsonResponse {
                         }),
                     )
                 })
-                .map(|v| v.into())
+                .map(Into::into)
         })
         .unwrap_or_else(|e| e)
 }
@@ -137,7 +137,7 @@ fn eval(mgr: State<Manager>, id: String, input: Input) -> JsonResponse {
                                 json!({"error": "invalid routine input"}),
                             )
                         })
-                        .map(|v| v.into())
+                        .map(Into::into)
                 })
         })
         .unwrap_or_else(|e| e)
