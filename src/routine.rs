@@ -1,5 +1,3 @@
-#![allow(dead_code)]
-
 use graph::{self, DiGraph};
 use serde_json;
 use rocket::Outcome;
@@ -28,7 +26,7 @@ impl Manager {
     }
     pub fn open_routine(&self, id: String) -> Option<Routine> {
         if self.store.read().unwrap().g.names.contains(&id) {
-            let rkt = self.rkt.clone();
+            let rkt = Arc::clone(&self.rkt);
             Some(Routine { id, rkt })
         } else {
             None
@@ -41,7 +39,6 @@ impl Manager {
 pub enum RacketError {
     InitializeFailure,
     NoPipe,
-    RuntimeError,
     InvalidJson,
     IO(io::Error),
 }
@@ -50,7 +47,6 @@ impl fmt::Display for RacketError {
         match *self {
             RacketError::InitializeFailure => write!(f, "failed to initialize racket"),
             RacketError::NoPipe => write!(f, "failed to connect pipe to racket"),
-            RacketError::RuntimeError => write!(f, "racket runtime error"),
             RacketError::InvalidJson => write!(f, "racket gave invalid json"),
             RacketError::IO(ref err) => write!(f, "IO error: {}", err),
         }
@@ -160,10 +156,8 @@ impl Racket {
             .map_err(|_| RacketError::InitializeFailure)?;
         let stdin = child.stdin.ok_or(RacketError::NoPipe)?;
         let stdout = child.stdout.ok_or(RacketError::NoPipe)?;
-        Ok(Racket {
-            stdin: stdin,
-            stdout: BufReader::new(stdout),
-        })
+        let stdout = BufReader::new(stdout);
+        Ok(Racket { stdin, stdout })
     }
 
     pub fn execute(&mut self, op: serde_json::Value) -> Result<String, RacketError> {
@@ -177,8 +171,6 @@ impl Racket {
         Ok(s)
     }
 }
-
-pub enum InsertError {}
 
 pub struct Store {
     g: DiGraph,
@@ -195,6 +187,7 @@ impl Store {
     }
 }
 
+#[allow(dead_code)]
 pub struct RoutineBuilder {
     id: String,
     description: Option<String>,
@@ -205,9 +198,10 @@ pub struct RoutineBuilder {
     generator: String, // RNG -> Input
     validator: Option<String>, // Input -> bool
 
-        // parameterized_generator: Option<String>,
-        // example_parameters: Option<Box<[Input]>>
+    // parameterized_generator: Option<String>,
+    // example_parameters: Option<Box<[Input]>>
 }
+#[allow(dead_code)]
 impl RoutineBuilder {
     pub fn new(id: String, evaluator: String, generator: String) -> Self {
         RoutineBuilder {
@@ -236,8 +230,4 @@ impl RoutineBuilder {
         self.validator = Some(validator);
         self
     }
-}
-
-fn routine_path(id: &str) -> String {
-    format!("src/routines/{}.rkt", id)
 }

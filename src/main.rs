@@ -2,8 +2,6 @@
 #![plugin(rocket_codegen)]
 
 extern crate itertools;
-#[macro_use]
-extern crate lazy_static;
 extern crate rocket;
 extern crate serde;
 #[macro_use]

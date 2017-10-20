@@ -5,7 +5,6 @@ authors = ["Lucas Morales <lucas@lucasem.com>"]
 
 [dependencies]
 itertools = "0.7.1"
-lazy_static = "0.2"
 rocket_codegen = { git = "https://github.com/lucasem/Rocket.git", branch = "empty-query" }
 rocket = { git = "https://github.com/lucasem/Rocket.git", branch = "empty-query" }
 serde = "1.0"

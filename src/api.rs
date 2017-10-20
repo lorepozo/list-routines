@@ -2,14 +2,15 @@ extern crate rocket;
 extern crate serde;
 extern crate serde_json;
 
-use std;
-use rocket::{State, http, request, response};
 use rocket::response::{Response, Responder};
+use rocket::{State, http, request, response};
 use routine::{Manager, Input};
+use std;
 
 const DEFAULT_FIND_COUNT: u32 = 1;
 const DEFAULT_GENERATE_COUNT: u32 = 1;
 
+/// An http response comprising of JSON data.
 #[derive(Clone, Debug)]
 struct JsonResponse(http::Status, serde_json::Value);
 impl<'r> Responder<'r> for JsonResponse {
@@ -23,35 +24,28 @@ impl<'r> Responder<'r> for JsonResponse {
         )
     }
 }
+impl<T: serde::Serialize> From<T> for JsonResponse {
+    fn from(v: T) -> JsonResponse {
+        serde_json::to_value(v)
+            .map(|j| {
+                JsonResponse(
+                    http::Status::Ok,
+                    json!({
+                        "result": j
+                    }),
+                )
+            })
+            .unwrap_or_else(|_| {
+                JsonResponse(
+                    http::Status::InternalServerError,
+                    json!({"error": "could not serialize result"}),
+                )
+            })
+    }
+}
 
-lazy_static! {
-    static ref JSON_INTERNAL_SERVER_ERROR: serde_json::Value = json!({"error": "internal server error"});
-    static ref JSON_NOT_FOUND: serde_json::Value = json!({"error": "not found"});
-    static ref JSON_BAD_REQUEST: serde_json::Value = json!({"error": "bad request"});
-}
-fn response_internal_server_error() -> JsonResponse {
-    JsonResponse(
-        http::Status::InternalServerError,
-        JSON_INTERNAL_SERVER_ERROR.clone(),
-    )
-}
 fn response_not_found() -> JsonResponse {
-    JsonResponse(http::Status::NotFound, JSON_NOT_FOUND.clone())
-}
-fn response_bad_request() -> JsonResponse {
-    JsonResponse(http::Status::BadRequest, JSON_BAD_REQUEST.clone())
-}
-fn response_ok<T: serde::Serialize>(v: T) -> JsonResponse {
-    serde_json::to_value(v)
-        .map(|j| {
-            JsonResponse(
-                http::Status::Ok,
-                json!({
-                    "result": j
-                }),
-            )
-        })
-        .unwrap_or_else(|_| response_internal_server_error())
+    JsonResponse(http::Status::NotFound, json!({"error": "not found"}))
 }
 
 #[derive(Copy, Clone, FromForm)]
@@ -70,8 +64,14 @@ fn find(mgr: State<Manager>, form: FindForm) -> JsonResponse {
         .read()
         .unwrap()
         .find(form.count.unwrap_or(DEFAULT_FIND_COUNT))
-        .map(response_ok)
-        .unwrap_or_else(|_| response_internal_server_error())
+        .map_err(|_| {
+            JsonResponse(
+                http::Status::InternalServerError,
+                json!({"error": "find operation failed"}),
+            )
+        })
+        .map(|v| v.into())
+        .unwrap_or_else(|e| e)
 }
 
 #[get("/examples/<id>")]
@@ -89,7 +89,7 @@ fn examples(mgr: State<Manager>, id: String) -> JsonResponse {
                         }),
                     )
                 })
-                .map(response_ok)
+                .map(|v| v.into())
         })
         .unwrap_or_else(|e| e)
 }
@@ -109,7 +109,7 @@ fn gen(mgr: State<Manager>, id: String, form: GenerateForm) -> JsonResponse {
                         }),
                     )
                 })
-                .map(response_ok)
+                .map(|v| v.into())
         })
         .unwrap_or_else(|e| e)
 }
@@ -129,8 +129,15 @@ fn eval(mgr: State<Manager>, id: String, input: Input) -> JsonResponse {
                         }),
                     )
                 })
-                .and_then(|output| {
-                    output.ok_or_else(response_bad_request).map(response_ok)
+                .and_then(|result| {
+                    result
+                        .ok_or_else(|| {
+                            JsonResponse(
+                                http::Status::BadRequest,
+                                json!({"error": "invalid routine input"}),
+                            )
+                        })
+                        .map(|v| v.into())
                 })
         })
         .unwrap_or_else(|e| e)
@@ -138,7 +145,7 @@ fn eval(mgr: State<Manager>, id: String, input: Input) -> JsonResponse {
 
 #[catch(400)]
 fn bad_request() -> JsonResponse {
-    response_bad_request()
+    JsonResponse(http::Status::BadRequest, json!({"error": "bad request"}))
 }
 #[catch(404)]
 fn not_found() -> JsonResponse {
@@ -146,7 +153,10 @@ fn not_found() -> JsonResponse {
 }
 #[catch(500)]
 fn internal_server_error() -> JsonResponse {
-    response_internal_server_error()
+    JsonResponse(
+        http::Status::InternalServerError,
+        json!({"error": "internal server error"}),
+    )
 }
 
 pub fn rocket() -> rocket::Rocket {
