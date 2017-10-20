@@ -41,3 +41,11 @@ unsuccessful responses are of the form `{"error": "explanation"}`.
 Use `cargo run` to run the server. Add the `--release` flag for better
 performance (and slower compilation). **This must be executed from the
 project root directory** (for now).
+
+## Adding routines
+
+Routines are currently not relational, so adding a new routine is easy.
+Simply add a routine id, such as `sum`, to `./routines.graph` (on the first
+line, space-separated) and add the source file `./src/routines/sum.rkt`
+which provides `validate`, `evaluate`, `examples`, and `generate`. See the
+existing routine implementations for an example.
