@@ -1,7 +1,7 @@
 #lang racket
 (provide validate evaluate examples generate)
 
-(require "../prelude.rkt")
+(require "../prelude.rkt") ; generate-many
 
 (define (validate l) (and (list? l) (andmap integer? l)))
 (define evaluate length)

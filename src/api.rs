@@ -3,9 +3,9 @@ extern crate serde;
 extern crate serde_json;
 
 use std;
-use rocket::{http, request, response};
+use rocket::{State, http, request, response};
 use rocket::response::{Response, Responder};
-use routine::{store, Input, Routine};
+use routine::{Manager, Input};
 
 const DEFAULT_FIND_COUNT: u32 = 1;
 const DEFAULT_GENERATE_COUNT: u32 = 1;
@@ -65,16 +65,19 @@ struct GenerateForm {
 }
 
 #[get("/find?<form>")]
-fn find(form: FindForm) -> JsonResponse {
-    store::find(form.count.unwrap_or(DEFAULT_FIND_COUNT))
+fn find(mgr: State<Manager>, form: FindForm) -> JsonResponse {
+    mgr.store
+        .read()
+        .unwrap()
+        .find(form.count.unwrap_or(DEFAULT_FIND_COUNT))
         .map(response_ok)
         .unwrap_or_else(|_| response_internal_server_error())
 }
 
 #[get("/examples/<id>")]
-fn examples(id: String) -> JsonResponse {
-    Routine::open(id)
-        .map_err(|_| response_not_found())
+fn examples(mgr: State<Manager>, id: String) -> JsonResponse {
+    mgr.open_routine(id)
+        .ok_or_else(response_not_found)
         .and_then(|routine| {
             routine
                 .examples()
@@ -92,9 +95,9 @@ fn examples(id: String) -> JsonResponse {
 }
 
 #[get("/gen/<id>?<form>")]
-fn gen(id: String, form: GenerateForm) -> JsonResponse {
-    Routine::open(id)
-        .map_err(|_| response_not_found())
+fn gen(mgr: State<Manager>, id: String, form: GenerateForm) -> JsonResponse {
+    mgr.open_routine(id)
+        .ok_or_else(response_not_found)
         .and_then(|routine| {
             routine
                 .generate(form.count.unwrap_or(DEFAULT_GENERATE_COUNT))
@@ -112,9 +115,9 @@ fn gen(id: String, form: GenerateForm) -> JsonResponse {
 }
 
 #[post("/eval/<id>", data = "<input>")]
-fn eval(id: String, input: Input) -> JsonResponse {
-    Routine::open(id)
-        .map_err(|_| response_not_found())
+fn eval(mgr: State<Manager>, id: String, input: Input) -> JsonResponse {
+    mgr.open_routine(id)
+        .ok_or_else(response_not_found)
         .and_then(|routine| {
             routine
                 .evaluate(input)
@@ -149,5 +152,6 @@ fn internal_server_error() -> JsonResponse {
 pub fn rocket() -> rocket::Rocket {
     rocket::ignite()
         .mount("/", routes![find, gen, examples, eval])
+        .manage(Manager::new().expect("initialize routine manager"))
         .catch(catchers![bad_request, not_found, internal_server_error])
 }

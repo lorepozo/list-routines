@@ -1,48 +1,51 @@
+#![allow(dead_code)] // TODO: use to_writer
+
 extern crate itertools;
 
+use std;
 use std::fmt;
 use std::io::{self, Write, BufRead};
 use itertools::Itertools;
 
 #[derive(Debug)]
-pub enum GraphError {
+pub enum Error {
     BadFormat,
     IO(io::Error),
 }
-impl fmt::Display for GraphError {
+impl fmt::Display for Error {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         match *self {
-            GraphError::BadFormat => write!(f, "graph error: bad format"),
-            GraphError::IO(ref err) => write!(f, "IO error: {}", err),
+            Error::BadFormat => write!(f, "graph error: bad format"),
+            Error::IO(ref err) => write!(f, "IO error: {}", err),
         }
     }
 }
-impl ::std::error::Error for GraphError {
+impl ::std::error::Error for Error {
     fn description(&self) -> &str {
         match *self {
-            GraphError::BadFormat => "graph error: bad format",
-            GraphError::IO(ref err) => err.description(),
+            Error::BadFormat => "graph error: bad format",
+            Error::IO(ref err) => err.description(),
         }
     }
 }
-impl From<io::Error> for GraphError {
-    fn from(err: io::Error) -> GraphError {
-        GraphError::IO(err)
+impl From<io::Error> for Error {
+    fn from(err: io::Error) -> Error {
+        Error::IO(err)
     }
 }
-impl From<std::num::ParseIntError> for GraphError {
-    fn from(_: std::num::ParseIntError) -> GraphError {
-        GraphError::BadFormat
+impl From<std::num::ParseIntError> for Error {
+    fn from(_: std::num::ParseIntError) -> Error {
+        Error::BadFormat
     }
 }
 
 #[derive(Debug)]
-pub struct Graph {
+pub struct DiGraph {
     pub names: Vec<String>,
     pub edges: Vec<Vec<usize>>,
 }
-impl Graph {
-    pub fn to_writer<T: Write>(&self, w: &mut T) -> Result<(), GraphError> {
+impl DiGraph {
+    pub fn to_writer<T: Write>(&self, w: &mut T) -> Result<(), Error> {
         w.write_all(self.names.join(" ").as_bytes())?;
         w.write_all(b"\n")?;
         for i in 0..self.edges.len() {
@@ -59,11 +62,11 @@ impl Graph {
         Ok(())
     }
 
-    pub fn deserialize<T: BufRead>(r: T) -> Result<Self, GraphError> {
+    pub fn load<T: BufRead>(r: T) -> Result<Self, Error> {
         let mut lines = r.lines();
         let first_line = lines.next();
         if first_line.is_none() {
-            return Err(GraphError::BadFormat);
+            return Err(Error::BadFormat);
         }
         let names: Vec<String> = first_line
             .unwrap()
@@ -77,7 +80,7 @@ impl Graph {
             let mut it = line.splitn(2, ": ");
             let (oi, orst) = (it.next(), it.next());
             if oi.is_none() || orst.is_none() {
-                return Err(GraphError::BadFormat);
+                return Err(Error::BadFormat);
             }
             let (i, rst) = (oi.unwrap(), orst.unwrap());
             let i: usize = i.parse()?;
@@ -86,6 +89,6 @@ impl Graph {
                 edges[i - 1].push(j - 1);
             }
         }
-        Ok(Graph { names, edges })
+        Ok(DiGraph { names, edges })
     }
 }

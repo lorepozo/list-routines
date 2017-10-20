@@ -1,6 +1,7 @@
 #![feature(plugin,custom_derive,decl_macro)]
 #![plugin(rocket_codegen)]
 
+extern crate itertools;
 #[macro_use]
 extern crate lazy_static;
 extern crate rocket;
@@ -10,8 +11,9 @@ extern crate serde_derive;
 #[macro_use]
 extern crate serde_json;
 
-mod routine;
 mod api;
+mod graph;
+mod routine;
 
 fn main() {
     api::rocket().launch();
