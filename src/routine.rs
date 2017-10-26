@@ -137,7 +137,26 @@ impl MetaRacket {
         Ok(Self {})
     }
     pub fn execute(&mut self, op: serde_json::Value) -> Result<String, RacketError> {
-        Racket::new()?.execute(op)
+        let child = Command::new("racket")
+            .arg("src/loader.rkt")
+            .stdin(Stdio::piped())
+            .stdout(Stdio::piped())
+            .stderr(Stdio::null())
+            .spawn()
+            .map_err(|_| RacketError::InitializeFailure)?;
+        {
+            let mut stdin = child.stdin.ok_or(RacketError::NoPipe)?;
+            stdin.write_all(op.to_string().as_bytes())?;
+            stdin.write_all(b"\n\n")?;
+            stdin.flush()?;
+        }
+        let mut s = String::new();
+        {
+            let stdout = child.stdout.ok_or(RacketError::NoPipe)?;
+            let mut stdout = BufReader::new(stdout);
+            stdout.read_line(&mut s)?;
+        }
+        Ok(s)
     }
 }
 
@@ -145,6 +164,7 @@ pub struct Racket {
     stdin: ChildStdin,
     stdout: BufReader<ChildStdout>,
 }
+#[allow(dead_code)]
 impl Racket {
     pub fn new() -> Result<Self, RacketError> {
         let child = Command::new("racket")
@@ -162,7 +182,7 @@ impl Racket {
 
     pub fn execute(&mut self, op: serde_json::Value) -> Result<String, RacketError> {
         self.stdin.write_all(op.to_string().as_bytes())?;
-        self.stdin.write_all(b"\n\n")?;
+        self.stdin.write_all(b"\n")?;
         self.stdin.flush()?;
         // println!("wrote to racket: {}", op.to_string());
         let mut s = String::new();
