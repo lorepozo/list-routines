@@ -19,27 +19,30 @@
        (directory-list "src/routines")))
 (define allowed-requires (append allowed-requires-std allowed-requires-routines))
 
+(define (interpret-line line callback)
+  (with-handlers ([exn:fail? (lambda (exn) 'null)])
+    (let* ([js          (bytes->jsexpr line)]
+           [op          (hash-ref js 'op "evaluate")]
+           [routine     (hash-ref js 'routine)]
+           [inp         (hash-ref js 'input '())]
+           [gen-params  (hash-ref js 'params (make-hasheq))]
+           [ns          (make-base-namespace)]
+           [evaluator   (λ (expr) (eval expr ns))])
+      (evaluator `(require ,(string-append "src/routines/" routine ".rkt")))
+      (write-json (case op
+        [("validate") (evaluator `(validate ',inp))]
+        [("evaluate") (evaluator `(let ([inp ',inp])
+                                    (if (validate inp) (evaluate inp) 'null)))]
+        [("examples") (evaluator '(examples))]
+        [("generate") (evaluator `(generate ,gen-params))]
+        [else 'null]))))
+  (newline)
+  (flush-output)
+  (callback))
+
 (define (main)
   (let ([line (read-bytes-line)])
     (if (eof-object? line)
       (exit)
-      (with-handlers ([exn:fail? (lambda (exn) (newline) (main))])
-        ; on failure, prints newline and re-iterates.
-        (let* ([js          (bytes->jsexpr line)]
-               [op          (hash-ref js 'op "evaluate")]
-               [routine     (hash-ref js 'routine)]
-               [inp         (hash-ref js 'input '())]
-               [gen-params  (hash-ref js 'params (make-hasheq))]
-               [ns          (make-base-namespace)]
-               [evaluator   (λ (expr) (eval expr ns))])
-        (evaluator `(require ,(string-append "src/routines/" routine ".rkt")))
-        (write-json (case op
-          [("validate") (evaluator `(validate ',inp))]
-          [("evaluate") (evaluator `(let ([inp ',inp])
-                                      (if (validate inp) (evaluate inp) 'null)))]
-          [("examples") (evaluator '(examples))]
-          [("generate") (evaluator `(generate ,gen-params))]
-          [else 'null]))
-        (newline)
-        (main))))))
+      (interpret-line line main))))
 (main)
