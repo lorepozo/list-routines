@@ -20,7 +20,7 @@
 (define allowed-requires (append allowed-requires-std allowed-requires-routines))
 
 (define (interpret-line line callback)
-  (with-handlers ([exn:fail? (lambda (exn) 'null)])
+  (with-handlers ([exn:fail? (lambda (exn) (display exn (current-error-port)))])
     (let* ([js          (bytes->jsexpr line)]
            [op          (hash-ref js 'op "evaluate")]
            [routine     (hash-ref js 'routine)]
