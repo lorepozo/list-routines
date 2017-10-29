@@ -4,8 +4,8 @@
 (require "../prelude.rkt")
 
 (define (validate l) (and (list? l) (andmap integer? l)))
-(define evaluate length)
-(define (examples) '((1 2 3) (0) (1 1 2 1)))
+(define (evaluate l) (append-map (λ (e) (list e e)) l))
+(define (examples) '((0) (7 2 4)))
 (define generate (generate-many
   (λ (params)
      (let ([len (hash-ref params 'len (random 8))])
