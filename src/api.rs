@@ -159,9 +159,8 @@ fn internal_server_error() -> JsonResponse {
     )
 }
 
-pub fn rocket() -> rocket::Rocket {
-    rocket::ignite()
-        .mount("/", routes![find, gen, examples, eval])
+pub fn mount(r: rocket::Rocket) -> rocket::Rocket {
+    r.mount("/", routes![find, gen, examples, eval])
         .manage(Manager::new().expect("initialize routine manager"))
         .catch(catchers![bad_request, not_found, internal_server_error])
 }

@@ -49,3 +49,7 @@ Simply add a routine id, such as `sum`, to `./routines.graph` (on the first
 line, space-separated) and add the source file `./src/routines/sum.rkt`
 which provides `validate`, `evaluate`, `examples`, and `generate`. See the
 existing routine implementations for an example.
+
+## Testing
+
+Run `cargo test -- --nocapture` to test all of the routines.
