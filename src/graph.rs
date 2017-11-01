@@ -1,5 +1,3 @@
-extern crate itertools;
-
 use std::{error, fmt};
 use std::io::{self, BufRead, Write};
 use std::num::ParseIntError;
@@ -90,5 +88,35 @@ impl DiGraph {
             }
         }
         Ok(DiGraph { names, edges })
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::DiGraph;
+
+    fn load_and_store(s: &str) {
+        let g = DiGraph::load(s.as_bytes()).unwrap();
+        let mut out: Vec<u8> = Vec::new();
+        g.to_writer(&mut out).unwrap();
+        assert_eq!(s, &String::from_utf8(out).unwrap());
+    }
+
+    #[test]
+    fn one_node_no_edges() {
+        load_and_store("a\n");
+    }
+
+    #[test]
+    fn many_node_no_edges() {
+        load_and_store("a b c\n");
+    }
+
+    #[test]
+    fn edges() {
+        load_and_store("a b\n1: 2\n2: 1\n");
+        load_and_store("a b c\n1: 2\n2: 3\n3: 1\n");
+        load_and_store("a b c d\n1: 4\n");
+        load_and_store("a b c d\n1: 2 3 4\n2: 3 4\n3: 4\n");
     }
 }

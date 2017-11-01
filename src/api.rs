@@ -1,14 +1,12 @@
-extern crate rocket;
-extern crate serde;
-extern crate serde_json;
-
 use std::collections::HashMap;
 use std::io::Cursor;
 
-use rocket::{request, response};
+use rocket::{self, request, response};
 use rocket::request::FromForm;
 use rocket::http::{ContentType, Status};
 use rocket::State;
+use serde::Serialize;
+use serde_json;
 
 use routine::{Input, Manager};
 
@@ -28,7 +26,7 @@ impl<'r> response::Responder<'r> for JsonResponse {
         )
     }
 }
-impl<T: serde::Serialize> From<T> for JsonResponse {
+impl<T: Serialize> From<T> for JsonResponse {
     fn from(v: T) -> JsonResponse {
         serde_json::to_value(v)
             .map(|j| {
