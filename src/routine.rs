@@ -1,15 +1,17 @@
-use graph::{self, DiGraph};
-use serde_json;
-use rocket::Outcome;
-use rocket::data::{self, Data, FromData};
-use rocket::http::Status;
-use rocket::request::Request;
+use std::collections::HashMap;
 use std::fmt;
 use std::fs::File;
 use std::io::prelude::*;
 use std::io::{self, BufReader};
-use std::process::{Command, Stdio, ChildStdin, ChildStdout};
+use std::process::{Command, ChildStdin, ChildStdout, Stdio};
 use std::sync::{Arc, Mutex, RwLock};
+
+use rocket::{Outcome, Request};
+use rocket::data::{self, Data, FromData};
+use rocket::http::Status;
+use serde_json;
+
+use graph::{self, DiGraph};
 
 pub struct Manager {
     pub rkt: Arc<Mutex<Racket>>,
@@ -117,13 +119,12 @@ impl Routine {
     }
 
     /// Generates a given number of valid inputs for the routine.
-    pub fn generate(&self, count: u32) -> Result<Vec<Input>, RacketError> {
+    pub fn generate(&self, params: HashMap<&str, &str>) -> Result<Vec<Input>, RacketError> {
+        let params: serde_json::Value = json!(params);
         let op = json!({
             "op": "generate",
             "routine": &self.id,
-            "params": {
-                "count": count,
-            },
+            "params": params,
         });
         self.rkt.lock().unwrap().execute(op).and_then(|s| {
             serde_json::from_str(&s).map_err(|_| RacketError::InvalidJson)

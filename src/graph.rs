@@ -1,10 +1,9 @@
-#![allow(dead_code)] // TODO: use to_writer
-
 extern crate itertools;
 
-use std;
-use std::fmt;
-use std::io::{self, Write, BufRead};
+use std::{error, fmt};
+use std::io::{self, BufRead, Write};
+use std::num::ParseIntError;
+
 use itertools::Itertools;
 
 #[derive(Debug)]
@@ -20,7 +19,7 @@ impl fmt::Display for Error {
         }
     }
 }
-impl ::std::error::Error for Error {
+impl error::Error for Error {
     fn description(&self) -> &str {
         match *self {
             Error::BadFormat => "graph error: bad format",
@@ -33,8 +32,8 @@ impl From<io::Error> for Error {
         Error::IO(err)
     }
 }
-impl From<std::num::ParseIntError> for Error {
-    fn from(_: std::num::ParseIntError) -> Error {
+impl From<ParseIntError> for Error {
+    fn from(_: ParseIntError) -> Error {
         Error::BadFormat
     }
 }
@@ -45,6 +44,7 @@ pub struct DiGraph {
     pub edges: Vec<Vec<usize>>,
 }
 impl DiGraph {
+    #[allow(dead_code)]
     pub fn to_writer<T: Write>(&self, w: &mut T) -> Result<(), Error> {
         w.write_all(self.names.join(" ").as_bytes())?;
         w.write_all(b"\n")?;

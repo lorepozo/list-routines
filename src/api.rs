@@ -2,24 +2,28 @@ extern crate rocket;
 extern crate serde;
 extern crate serde_json;
 
-use rocket::response::{Response, Responder};
-use rocket::{State, http, request, response};
-use routine::{Manager, Input};
-use std;
+use std::collections::HashMap;
+use std::io::Cursor;
+
+use rocket::{request, response};
+use rocket::request::FromForm;
+use rocket::http::{ContentType, Status};
+use rocket::State;
+
+use routine::{Input, Manager};
 
 const DEFAULT_FIND_COUNT: u32 = 1;
-const DEFAULT_GENERATE_COUNT: u32 = 1;
 
 /// An http response comprising of JSON data.
 #[derive(Clone, Debug)]
-struct JsonResponse(http::Status, serde_json::Value);
-impl<'r> Responder<'r> for JsonResponse {
+struct JsonResponse(Status, serde_json::Value);
+impl<'r> response::Responder<'r> for JsonResponse {
     fn respond_to(self, _: &request::Request) -> response::Result<'r> {
         Ok(
-            Response::build()
+            response::Response::build()
                 .status(self.0)
-                .header(http::ContentType::JSON)
-                .sized_body(std::io::Cursor::new(self.1.to_string()))
+                .header(ContentType::JSON)
+                .sized_body(Cursor::new(self.1.to_string()))
                 .finalize(),
         )
     }
@@ -29,7 +33,7 @@ impl<T: serde::Serialize> From<T> for JsonResponse {
         serde_json::to_value(v)
             .map(|j| {
                 JsonResponse(
-                    http::Status::Ok,
+                    Status::Ok,
                     json!({
                         "result": j
                     }),
@@ -37,15 +41,30 @@ impl<T: serde::Serialize> From<T> for JsonResponse {
             })
             .unwrap_or_else(|_| {
                 JsonResponse(
-                    http::Status::InternalServerError,
+                    Status::InternalServerError,
                     json!({"error": "could not serialize result"}),
                 )
             })
     }
 }
 
+struct Form<'a> {
+    items: request::FormItems<'a>,
+}
+impl<'a> From<Form<'a>> for HashMap<&'a str, &'a str> {
+    fn from(f: Form<'a>) -> HashMap<&'a str, &'a str> {
+        f.items.map(|x| (x.0.as_str(), x.1.as_str())).collect()
+    }
+}
+impl<'a, 'r> request::FromRequest<'a, 'r> for Form<'a> {
+    type Error = ();
+    fn from_request(r: &'a request::Request<'r>) -> request::Outcome<Form<'a>, ()> {
+        rocket::Outcome::Success(Form { items: r.uri().query().unwrap_or("").into() })
+    }
+}
+
 fn response_not_found() -> JsonResponse {
-    JsonResponse(http::Status::NotFound, json!({"error": "not found"}))
+    JsonResponse(Status::NotFound, json!({"error": "not found"}))
 }
 
 #[derive(Copy, Clone, FromForm)]
@@ -53,20 +72,19 @@ struct FindForm {
     count: Option<u32>,
 }
 
-#[derive(Copy, Clone, FromForm)]
-struct GenerateForm {
-    count: Option<u32>,
-}
-
-#[get("/find?<form>")]
-fn find(mgr: State<Manager>, form: FindForm) -> JsonResponse {
+#[get("/find")]
+fn find(mgr: State<Manager>, mut form: Form) -> JsonResponse {
+    let form = match FindForm::from_form(&mut form.items, false) {
+        Ok(f) => f,
+        Err(_) => return JsonResponse(Status::BadRequest, json!({"error": "invalid query"})),
+    };
     mgr.store
         .read()
         .unwrap()
         .find(form.count.unwrap_or(DEFAULT_FIND_COUNT))
         .map_err(|_| {
             JsonResponse(
-                http::Status::InternalServerError,
+                Status::InternalServerError,
                 json!({"error": "find operation failed"}),
             )
         })
@@ -83,7 +101,7 @@ fn examples(mgr: State<Manager>, id: String) -> JsonResponse {
                 .examples()
                 .map_err(|e| {
                     JsonResponse(
-                        http::Status::InternalServerError,
+                        Status::InternalServerError,
                         json!({
                             "error": format!("{}", e)
                         }),
@@ -94,16 +112,17 @@ fn examples(mgr: State<Manager>, id: String) -> JsonResponse {
         .unwrap_or_else(|e| e)
 }
 
-#[get("/gen/<id>?<form>")]
-fn gen(mgr: State<Manager>, id: String, form: GenerateForm) -> JsonResponse {
+#[get("/gen/<id>")]
+fn gen(mgr: State<Manager>, id: String, form: Form) -> JsonResponse {
+    let params: HashMap<&str, &str> = form.into();
     mgr.open_routine(id)
         .ok_or_else(response_not_found)
         .and_then(|routine| {
             routine
-                .generate(form.count.unwrap_or(DEFAULT_GENERATE_COUNT))
+                .generate(params)
                 .map_err(|e| {
                     JsonResponse(
-                        http::Status::InternalServerError,
+                        Status::InternalServerError,
                         json!({
                             "error": format!("{}", e)
                         }),
@@ -123,7 +142,7 @@ fn eval(mgr: State<Manager>, id: String, input: Input) -> JsonResponse {
                 .evaluate(input)
                 .map_err(|e| {
                     JsonResponse(
-                        http::Status::InternalServerError,
+                        Status::InternalServerError,
                         json!({
                             "error": format!("{}", e)
                         }),
@@ -133,7 +152,7 @@ fn eval(mgr: State<Manager>, id: String, input: Input) -> JsonResponse {
                     result
                         .ok_or_else(|| {
                             JsonResponse(
-                                http::Status::BadRequest,
+                                Status::BadRequest,
                                 json!({"error": "invalid routine input"}),
                             )
                         })
@@ -145,7 +164,7 @@ fn eval(mgr: State<Manager>, id: String, input: Input) -> JsonResponse {
 
 #[catch(400)]
 fn bad_request() -> JsonResponse {
-    JsonResponse(http::Status::BadRequest, json!({"error": "bad request"}))
+    JsonResponse(Status::BadRequest, json!({"error": "bad request"}))
 }
 #[catch(404)]
 fn not_found() -> JsonResponse {
@@ -154,7 +173,7 @@ fn not_found() -> JsonResponse {
 #[catch(500)]
 fn internal_server_error() -> JsonResponse {
     JsonResponse(
-        http::Status::InternalServerError,
+        Status::InternalServerError,
         json!({"error": "internal server error"}),
     )
 }

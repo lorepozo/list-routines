@@ -19,12 +19,13 @@ fn main() {
 
 #[cfg(test)]
 mod tests {
-    use rocket::local::{LocalResponse, Client};
+    use rocket::local::{Client, LocalResponse};
     use rocket::http::Status;
     use rocket::config::{Config, Environment, LoggingLevel};
     use rocket;
     use serde_json;
     use serde::de::DeserializeOwned;
+
     use super::api;
     use super::routine::{Input, Output};
 
