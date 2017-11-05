@@ -1,3 +1,12 @@
+//! # API
+//!
+//! Most of this module is boilerplate.
+//! See the api functions [`eval`], [`example`], [`find`], and [`gen`] for details.
+//! [`eval`]: fn.eval.html
+//! [`example`]: fn.example.html
+//! [`find`]: fn.find.html
+//! [`gen`]: fn.gen.html
+
 use std::collections::HashMap;
 use std::io::Cursor;
 
@@ -10,6 +19,8 @@ use serde_json;
 
 use routine::{Input, Manager};
 
+/// A find request without an explicitly specified count will return up to this
+/// many items.
 const DEFAULT_FIND_COUNT: u32 = 1;
 
 /// An http response comprising of JSON data.
@@ -46,6 +57,9 @@ impl<T: Serialize> From<T> for JsonResponse {
     }
 }
 
+/// A generic form for key-value string pairs.
+/// Recommended usage is either to iterate over its `items` or to use `.into()`
+/// to create a `HashMap<&str, &str>`.
 struct Form<'a> {
     items: request::FormItems<'a>,
 }
@@ -61,15 +75,19 @@ impl<'a, 'r> request::FromRequest<'a, 'r> for Form<'a> {
     }
 }
 
-fn response_not_found() -> JsonResponse {
-    JsonResponse(Status::NotFound, json!({"error": "not found"}))
-}
-
+/// Specifies fields for use with the `/find` endpoint.
 #[derive(Copy, Clone, FromForm)]
 struct FindForm {
     count: Option<u32>,
 }
 
+/// The `/find` endpoint, via GET, returns a list of ids of routines in the
+/// dataset.
+///
+/// It currently takes (optionally) one query argument, `count`: e.g.
+/// `/find?count=2`.
+///
+/// Eventually support will be added for more constraints on finding.
 #[get("/find")]
 fn find(mgr: State<Manager>, mut form: Form) -> JsonResponse {
     let form = match FindForm::from_form(&mut form.items, false) {
@@ -90,10 +108,16 @@ fn find(mgr: State<Manager>, mut form: Form) -> JsonResponse {
         .unwrap_or_else(|e| e)
 }
 
+/// The `/examples/<id>` endpoint, via GET, returns a list of INPUTs for the
+/// given routine. These inputs should be representative of the routine's
+/// function.
 #[get("/examples/<id>")]
 fn examples(mgr: State<Manager>, id: String) -> JsonResponse {
     mgr.open_routine(id)
-        .ok_or_else(response_not_found)
+        .ok_or(JsonResponse(
+            Status::NotFound,
+            json!({"error": "not found"}),
+        ))
         .and_then(|routine| {
             routine
                 .examples()
@@ -110,11 +134,19 @@ fn examples(mgr: State<Manager>, id: String) -> JsonResponse {
         .unwrap_or_else(|e| e)
 }
 
+/// The `/gen/<id>` endpoint, via GET, returns a list of INPUTs for the routine
+/// that have been randomly generated.
+///
+/// It currently takes (optionally) one query argument, count: e.g.
+/// `/gen/len?count=3`.
 #[get("/gen/<id>")]
 fn gen(mgr: State<Manager>, id: String, form: Form) -> JsonResponse {
     let params: HashMap<&str, &str> = form.into();
     mgr.open_routine(id)
-        .ok_or_else(response_not_found)
+        .ok_or(JsonResponse(
+            Status::NotFound,
+            json!({"error": "not found"}),
+        ))
         .and_then(|routine| {
             routine
                 .generate(params)
@@ -131,10 +163,16 @@ fn gen(mgr: State<Manager>, id: String, form: Form) -> JsonResponse {
         .unwrap_or_else(|e| e)
 }
 
+/// The `/eval/<id>` endpoint, via POST, takes in json data representing input
+/// for the routine, and returns an OUTPUT. Invalid input for the routine
+/// results in a bad request error (HTTP 400).
 #[post("/eval/<id>", data = "<input>")]
 fn eval(mgr: State<Manager>, id: String, input: Input) -> JsonResponse {
     mgr.open_routine(id)
-        .ok_or_else(response_not_found)
+        .ok_or(JsonResponse(
+            Status::NotFound,
+            json!({"error": "not found"}),
+        ))
         .and_then(|routine| {
             routine
                 .evaluate(input)
@@ -161,23 +199,26 @@ fn eval(mgr: State<Manager>, id: String, input: Input) -> JsonResponse {
 }
 
 #[catch(400)]
-fn bad_request() -> JsonResponse {
+fn catch_bad_request() -> JsonResponse {
     JsonResponse(Status::BadRequest, json!({"error": "bad request"}))
 }
 #[catch(404)]
-fn not_found() -> JsonResponse {
-    response_not_found()
+fn catch_not_found() -> JsonResponse {
+    JsonResponse(Status::NotFound, json!({"error": "not found"}))
 }
 #[catch(500)]
-fn internal_server_error() -> JsonResponse {
+fn catch_internal_server_error() -> JsonResponse {
     JsonResponse(
         Status::InternalServerError,
         json!({"error": "internal server error"}),
     )
 }
 
+/// Attaches the api to the root of the given `Rocket` instance.
 pub fn mount(r: rocket::Rocket) -> rocket::Rocket {
     r.mount("/", routes![find, gen, examples, eval])
         .manage(Manager::new().expect("initialize routine manager"))
-        .catch(catchers![bad_request, not_found, internal_server_error])
+        .catch(
+            catchers![catch_bad_request, catch_not_found, catch_internal_server_error],
+        )
 }

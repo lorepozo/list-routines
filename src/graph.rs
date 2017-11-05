@@ -1,9 +1,16 @@
+//! # Graph
+//!
+//! See the directed graph implementation, [`DiGraph`], for details.
+//!
+//! [`DiGraph`]: struct.DiGraph.html
+
 use std::{error, fmt};
 use std::io::{self, BufRead, Write};
 use std::num::ParseIntError;
 
 use itertools::Itertools;
 
+/// The error type for graph operations.
 #[derive(Debug)]
 pub enum Error {
     BadFormat,
@@ -36,12 +43,72 @@ impl From<ParseIntError> for Error {
     }
 }
 
+/// A directed graph with named vertices. The [`edges`] and [`names`] fields
+/// have the same length, and are indexed by vertex numbering. The values of
+/// [`edges`] are lists of adjacent indexes.
+///
+/// The serialized representation is created via the [`to_writer`] method and
+/// loaded via the [`load`] method. In this representation, the first line is a
+/// space-separated list of ordered vertex names. Each subsequent line is of the
+/// form `i: <j...>` where `i` is a vertex number (1-indexed according to the
+/// names from the first line) and `<j...>` is a space-separated list of vertex
+/// numbers that the vertex `i` has a directed edge to.
+///
+/// For example, consider a "love triangle" graph with three vertices _A_, _B_,
+/// and _C_, where _A_ points to _B_, _B_ points to _C_, and _C_ points to _A_.
+/// The serialized representation is:
+///
+/// ```
+/// A B C
+/// 1: 2
+/// 2: 3
+/// 3: 1
+/// ```
+///
+/// The resulting DiGraph from [`load`] one the above serialization is as
+/// follows (note that the vertex numbers are zero-indexed here, unlike in the
+/// serial representation):
+///
+/// ```
+/// DiGraph {
+///     names: vec!["A", "B", "C"],
+///     edges: vec![vec![1], vec![2], vec![0]],
+/// }
+/// ```
+///
+/// ## Examples
+///
+/// Given a vertex name, you can get the names of adjacent vertices:
+///
+/// ```
+/// let name = "vertex-name";
+/// let i = graph.find(name).unwrap();
+/// let adj: Vec<String> = graph.edges[i].iter().map(|j| graph.names[j]).collect();
+/// ```
+///
+/// [`names`]: #structfield.names
+/// [`edges`]: #structfield.edges
+/// [`load`]: #method.load
+/// [`to_writer`]: #method.to_writer
 #[derive(Debug)]
 pub struct DiGraph {
+    /// Vertex names. Indexed by vertex numbering.
     pub names: Vec<String>,
+    /// Adjacency list. Indexed by vertex numbering. Values are lists of vertex
+    /// numbers for adjacent vertices.
     pub edges: Vec<Vec<usize>>,
 }
 impl DiGraph {
+    /// Returns the vertex numbering for the given vertex name.
+    pub fn find(&self, name: &str) -> Option<usize> {
+        self.names.iter().position(|s| s == name)
+    }
+
+    /// Serializes the graph into the given writer.
+    ///
+    /// See [`DiGraph`] for information on the serialized format.
+    ///
+    /// [`DiGraph`]: #
     #[allow(dead_code)]
     pub fn to_writer<T: Write>(&self, w: &mut T) -> Result<(), Error> {
         w.write_all(self.names.join(" ").as_bytes())?;
@@ -60,6 +127,11 @@ impl DiGraph {
         Ok(())
     }
 
+    /// Deserializes the buffer into a [`DiGraph`].
+    ///
+    /// See [`DiGraph`] for information on the serialized format.
+    ///
+    /// [`DiGraph`]: #
     pub fn load<T: BufRead>(r: T) -> Result<Self, Error> {
         let mut lines = r.lines();
         let first_line = lines.next();

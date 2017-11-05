@@ -1,3 +1,19 @@
+//! # Routine
+//!
+//! This module is responsible for the core functionality of the list-routines
+//! dataset.
+//!
+//! The [`Manager`] struct is the primary entrypoint for getting started. It
+//! maintains an interactive connection to the Racket runtime and it maintains a
+//! [`Store`] that keeps track of all routines.
+//!
+//! A [`Routine`] allows interacting with the Racket runtime for a particular
+//! routine.
+//!
+//! [`Manager`]: struct.Manager.html
+//! [`Routine`]: struct.Routine.html
+//! [`Store`]: struct.Store.html
+
 use std::collections::HashMap;
 use std::fmt;
 use std::fs::File;
@@ -13,22 +29,28 @@ use serde_json;
 
 use graph::{self, DiGraph};
 
+/// The error type for list routine operations.
 #[derive(Debug)]
 pub enum Error {
+    /// When a graph fails to load.
     Graph(graph::Error),
-    IO(io::Error),
+    /// When racket fails to initialize.
     InitializeFailure,
+    /// When racket responds with invalid JSON.
     InvalidJson,
+    /// When the connection to racket is broken.
     NoPipe,
+    /// Other IO-related error.
+    IO(io::Error),
 }
 impl fmt::Display for Error {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         match *self {
             Error::Graph(ref err) => write!(f, "Graph error: {}", err),
-            Error::IO(ref err) => write!(f, "IO error: {}", err),
             Error::InitializeFailure => write!(f, "failed to initialize racket"),
             Error::InvalidJson => write!(f, "racket gave invalid json"),
             Error::NoPipe => write!(f, "failed to connect pipe to racket"),
+            Error::IO(ref err) => write!(f, "IO error: {}", err),
         }
     }
 }
@@ -49,11 +71,42 @@ impl From<io::Error> for Error {
 }
 
 
+/// The `Manager` governs the dataset. It maintains the interactive racket
+/// connection as well as list routine storage. It is used to interact with
+/// particular list routines via the [`open_routine`] function.
+///
+/// ## Examples
+///
+/// Find some routines:
+///
+/// ```
+/// let routine_names = mgr.store()
+///                        .read()
+///                        .expect("poisoned lock")
+///                        .find(4)
+///                        .unwrap();
+/// ```
+///
+/// Evaluate a routine:
+///
+/// ```
+/// let routine_name = String::from("evens");
+/// let inp = vec![1, 2, 8, 5, 3];
+/// let routine = mgr.open_routine(routine_name)
+///                  .expect("routine not found");
+/// let out = routine.evaluate(inp)
+///                  .expect("internal error");
+/// assert_eq!(out, Some(Output::Array(vec![2, 8])));
+/// ```
+///
+/// [`open_routine`]: fn.open_routine.html
 pub struct Manager {
-    pub rkt: Arc<Mutex<Racket>>,
+    rkt: Arc<Mutex<Racket>>,
     pub store: Arc<RwLock<Store>>,
 }
 impl Manager {
+    /// Initializes a new Manager, connecting to a new rocket instance and
+    /// setting up list-routine storage.
     pub fn new() -> Result<Self, Error> {
         let rkt = Racket::new()?;
         let store = Store::new()?;
@@ -62,6 +115,7 @@ impl Manager {
             store: Arc::new(RwLock::new(store)),
         })
     }
+    /// Gets the routine if it exists.
     pub fn open_routine(&self, id: String) -> Option<Routine> {
         if self.store
             .read()
@@ -79,6 +133,7 @@ impl Manager {
 }
 
 
+/// All inputs must be of one of these forms.
 #[derive(Serialize, Deserialize, Debug)]
 #[serde(untagged)]
 pub enum Input {
@@ -96,6 +151,7 @@ impl FromData for Input {
     }
 }
 
+/// All outputs must be of one of these forms.
 #[derive(Serialize, Deserialize, Debug)]
 #[serde(untagged)]
 pub enum Output {
@@ -104,12 +160,34 @@ pub enum Output {
     Array(Vec<i32>),
 }
 
+/// Allows interaction with the a routine. Created by a [`Manager`].
+///
+/// ## Examples
+///
+/// ```
+/// let routine_name = "len";
+/// let routine = mgr.open_routine(routine_name)
+///                  .expect("routine not found");
+/// // evaluation
+/// assert_eq!(
+///   routine.evaluate(Input::Array(vec![1, 1])).unwrap(),
+///   Some(Output::Number(2)),
+/// );
+/// // examples
+/// for inp in routine.examples().unwrap() {
+///   // must be valid (Some)
+///   assert!(routine.evaluate(inp).unwrap().is_some());
+/// }
+/// ```
+///
+/// [`Manager`]: struct.Manager.html
 pub struct Routine {
     id: String,
     rkt: Arc<Mutex<Racket>>,
 }
 impl Routine {
-    /// Validates and executes the input for the routine. Invalid input will give Ok(None).
+    /// Validates and executes the input for the routine. Invalid input will
+    /// give Ok(None).
     pub fn evaluate(&self, inp: Input) -> Result<Option<Output>, Error> {
         let op = json!({
             "op": "evaluate",
@@ -152,12 +230,13 @@ impl Routine {
     }
 }
 
-pub struct Racket {
+/// Maintains the interactive connection to a racket runtime.
+struct Racket {
     stdin: ChildStdin,
     stdout: BufReader<ChildStdout>,
 }
 impl Racket {
-    pub fn new() -> Result<Self, Error> {
+    fn new() -> Result<Self, Error> {
         let child = Command::new("racket")
             .arg("src/loader.rkt")
             .stdin(Stdio::piped())
@@ -171,7 +250,12 @@ impl Racket {
         Ok(Racket { stdin, stdout })
     }
 
-    pub fn execute(&mut self, op: serde_json::Value) -> Result<String, Error> {
+    /// Communication with racket is done via lines of back-and-forth JSON. This
+    /// function serializes a given JSON operation and send it along, returning
+    /// the raw JSON string back if successful.
+    ///
+    /// Consult `loader.rkt` to see the valid operations.
+    fn execute(&mut self, op: serde_json::Value) -> Result<String, Error> {
         self.stdin.write_all(op.to_string().as_bytes())?;
         self.stdin.write_all(b"\n")?;
         self.stdin.flush()?;
@@ -181,6 +265,7 @@ impl Racket {
     }
 }
 
+/// Store maintains a graph of the list routines.
 pub struct Store {
     g: DiGraph,
 }
@@ -196,7 +281,7 @@ impl Store {
     }
 }
 
-#[allow(dead_code)]
+/*
 pub struct RoutineBuilder {
     id: String,
     description: Option<String>,
@@ -210,7 +295,6 @@ pub struct RoutineBuilder {
     // parameterized_generator: Option<String>,
     // example_parameters: Option<Box<[Input]>>
 }
-#[allow(dead_code)]
 impl RoutineBuilder {
     pub fn new(id: String, evaluator: String, generator: String) -> Self {
         RoutineBuilder {
@@ -240,3 +324,4 @@ impl RoutineBuilder {
         self
     }
 }
+*/
