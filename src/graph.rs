@@ -63,12 +63,8 @@ impl DiGraph {
     pub fn load<T: BufRead>(r: T) -> Result<Self, Error> {
         let mut lines = r.lines();
         let first_line = lines.next();
-        if first_line.is_none() {
-            return Err(Error::BadFormat);
-        }
         let names: Vec<String> = first_line
-            .unwrap()
-            .unwrap()
+            .ok_or(Error::BadFormat)??
             .split_whitespace()
             .map(str::to_string)
             .collect();
@@ -76,14 +72,10 @@ impl DiGraph {
         for line in lines {
             let line = line?;
             let mut it = line.splitn(2, ": ");
-            let (oi, orst) = (it.next(), it.next());
-            if oi.is_none() || orst.is_none() {
-                return Err(Error::BadFormat);
-            }
-            let (i, rst) = (oi.unwrap(), orst.unwrap());
-            let i: usize = i.parse()?;
+            let i: usize = it.next().ok_or(Error::BadFormat)?.parse()?;
+            let rst = it.next().ok_or(Error::BadFormat)?;
             for jstr in rst.split_whitespace() {
-                let j: usize = jstr.parse().unwrap();
+                let j: usize = jstr.parse()?;
                 edges[i - 1].push(j - 1);
             }
         }
@@ -96,10 +88,11 @@ mod tests {
     use super::DiGraph;
 
     fn load_and_store(s: &str) {
-        let g = DiGraph::load(s.as_bytes()).unwrap();
+        let g = DiGraph::load(s.as_bytes()).expect("load valid graph");
         let mut out: Vec<u8> = Vec::new();
-        g.to_writer(&mut out).unwrap();
-        assert_eq!(s, &String::from_utf8(out).unwrap());
+        g.to_writer(&mut out).expect("serialize graph");
+        let out_str = String::from_utf8(out).expect("serialized graph is utf-8");
+        assert_eq!(s, &out_str);
     }
 
     #[test]

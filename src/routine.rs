@@ -13,21 +13,63 @@ use serde_json;
 
 use graph::{self, DiGraph};
 
+#[derive(Debug)]
+pub enum Error {
+    Graph(graph::Error),
+    IO(io::Error),
+    InitializeFailure,
+    InvalidJson,
+    NoPipe,
+}
+impl fmt::Display for Error {
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        match *self {
+            Error::Graph(ref err) => write!(f, "Graph error: {}", err),
+            Error::IO(ref err) => write!(f, "IO error: {}", err),
+            Error::InitializeFailure => write!(f, "failed to initialize racket"),
+            Error::InvalidJson => write!(f, "racket gave invalid json"),
+            Error::NoPipe => write!(f, "failed to connect pipe to racket"),
+        }
+    }
+}
+impl ::std::error::Error for Error {
+    fn description(&self) -> &str {
+        "list-routine error"
+    }
+}
+impl From<graph::Error> for Error {
+    fn from(err: graph::Error) -> Error {
+        Error::Graph(err)
+    }
+}
+impl From<io::Error> for Error {
+    fn from(err: io::Error) -> Error {
+        Error::IO(err)
+    }
+}
+
+
 pub struct Manager {
     pub rkt: Arc<Mutex<Racket>>,
     pub store: Arc<RwLock<Store>>,
 }
 impl Manager {
-    pub fn new() -> Result<Self, ()> {
-        let rkt = Racket::new().unwrap();
-        let store = Store::new().unwrap();
+    pub fn new() -> Result<Self, Error> {
+        let rkt = Racket::new()?;
+        let store = Store::new()?;
         Ok(Manager {
             rkt: Arc::new(Mutex::new(rkt)),
             store: Arc::new(RwLock::new(store)),
         })
     }
     pub fn open_routine(&self, id: String) -> Option<Routine> {
-        if self.store.read().unwrap().g.names.contains(&id) {
+        if self.store
+            .read()
+            .expect("store rwlock is poisoned")
+            .g
+            .names
+            .contains(&id)
+        {
             let rkt = Arc::clone(&self.rkt);
             Some(Routine { id, rkt })
         } else {
@@ -36,34 +78,6 @@ impl Manager {
     }
 }
 
-
-#[derive(Debug)]
-pub enum RacketError {
-    InitializeFailure,
-    NoPipe,
-    InvalidJson,
-    IO(io::Error),
-}
-impl fmt::Display for RacketError {
-    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-        match *self {
-            RacketError::InitializeFailure => write!(f, "failed to initialize racket"),
-            RacketError::NoPipe => write!(f, "failed to connect pipe to racket"),
-            RacketError::InvalidJson => write!(f, "racket gave invalid json"),
-            RacketError::IO(ref err) => write!(f, "IO error: {}", err),
-        }
-    }
-}
-impl ::std::error::Error for RacketError {
-    fn description(&self) -> &str {
-        "racket error"
-    }
-}
-impl From<io::Error> for RacketError {
-    fn from(err: io::Error) -> RacketError {
-        RacketError::IO(err)
-    }
-}
 
 #[derive(Serialize, Deserialize, Debug)]
 #[serde(untagged)]
@@ -96,39 +110,45 @@ pub struct Routine {
 }
 impl Routine {
     /// Validates and executes the input for the routine. Invalid input will give Ok(None).
-    pub fn evaluate(&self, inp: Input) -> Result<Option<Output>, RacketError> {
+    pub fn evaluate(&self, inp: Input) -> Result<Option<Output>, Error> {
         let op = json!({
             "op": "evaluate",
             "routine": &self.id,
             "input": inp,
         });
-        self.rkt.lock().unwrap().execute(op).and_then(|s| {
-            serde_json::from_str(&s).map_err(|_| RacketError::InvalidJson)
-        })
+        self.rkt
+            .lock()
+            .expect("racket mutex is poisoned")
+            .execute(op)
+            .and_then(|s| serde_json::from_str(&s).map_err(|_| Error::InvalidJson))
     }
 
     /// Gives the examples of valid inputs for the routine.
-    pub fn examples(&self) -> Result<Vec<Input>, RacketError> {
+    pub fn examples(&self) -> Result<Vec<Input>, Error> {
         let op = json!({
             "op": "examples",
             "routine": &self.id,
         });
-        self.rkt.lock().unwrap().execute(op).and_then(|s| {
-            serde_json::from_str(&s).map_err(|_| RacketError::InvalidJson)
-        })
+        self.rkt
+            .lock()
+            .expect("racket mutex is poisoned")
+            .execute(op)
+            .and_then(|s| serde_json::from_str(&s).map_err(|_| Error::InvalidJson))
     }
 
     /// Generates a given number of valid inputs for the routine.
-    pub fn generate(&self, params: HashMap<&str, &str>) -> Result<Vec<Input>, RacketError> {
+    pub fn generate(&self, params: HashMap<&str, &str>) -> Result<Vec<Input>, Error> {
         let params: serde_json::Value = json!(params);
         let op = json!({
             "op": "generate",
             "routine": &self.id,
             "params": params,
         });
-        self.rkt.lock().unwrap().execute(op).and_then(|s| {
-            serde_json::from_str(&s).map_err(|_| RacketError::InvalidJson)
-        })
+        self.rkt
+            .lock()
+            .expect("racket mutex is poisoned")
+            .execute(op)
+            .and_then(|s| serde_json::from_str(&s).map_err(|_| Error::InvalidJson))
     }
 }
 
@@ -137,21 +157,21 @@ pub struct Racket {
     stdout: BufReader<ChildStdout>,
 }
 impl Racket {
-    pub fn new() -> Result<Self, RacketError> {
+    pub fn new() -> Result<Self, Error> {
         let child = Command::new("racket")
             .arg("src/loader.rkt")
             .stdin(Stdio::piped())
             .stdout(Stdio::piped())
             .stderr(Stdio::inherit())
             .spawn()
-            .map_err(|_| RacketError::InitializeFailure)?;
-        let stdin = child.stdin.ok_or(RacketError::NoPipe)?;
-        let stdout = child.stdout.ok_or(RacketError::NoPipe)?;
+            .map_err(|_| Error::InitializeFailure)?;
+        let stdin = child.stdin.ok_or(Error::NoPipe)?;
+        let stdout = child.stdout.ok_or(Error::NoPipe)?;
         let stdout = BufReader::new(stdout);
         Ok(Racket { stdin, stdout })
     }
 
-    pub fn execute(&mut self, op: serde_json::Value) -> Result<String, RacketError> {
+    pub fn execute(&mut self, op: serde_json::Value) -> Result<String, Error> {
         self.stdin.write_all(op.to_string().as_bytes())?;
         self.stdin.write_all(b"\n")?;
         self.stdin.flush()?;

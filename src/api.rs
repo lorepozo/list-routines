@@ -78,7 +78,7 @@ fn find(mgr: State<Manager>, mut form: Form) -> JsonResponse {
     };
     mgr.store
         .read()
-        .unwrap()
+        .expect("store rwlock is poisoned")
         .find(form.count.unwrap_or(DEFAULT_FIND_COUNT))
         .map_err(|_| {
             JsonResponse(
