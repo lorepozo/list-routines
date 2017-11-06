@@ -4,15 +4,14 @@
 //! dataset.
 //!
 //! The [`Manager`] struct is the primary entrypoint for getting started. It
-//! maintains an interactive connection to the Racket runtime and it maintains a
-//! [`Store`] that keeps track of all routines.
+//! maintains an interactive connection to the Racket runtime and it keeps track
+//! of all routines.
 //!
 //! A [`Routine`] allows interacting with the Racket runtime for a particular
 //! routine.
 //!
 //! [`Manager`]: struct.Manager.html
 //! [`Routine`]: struct.Routine.html
-//! [`Store`]: struct.Store.html
 
 use std::collections::HashMap;
 use std::fmt;
@@ -80,11 +79,7 @@ impl From<io::Error> for Error {
 /// Find some routines:
 ///
 /// ```
-/// let routine_names = mgr.store()
-///                        .read()
-///                        .expect("poisoned lock")
-///                        .find(4)
-///                        .unwrap();
+/// let routine_names = mgr.find(4).unwrap();
 /// ```
 ///
 /// Evaluate a routine:
@@ -102,25 +97,41 @@ impl From<io::Error> for Error {
 /// [`open_routine`]: fn.open_routine.html
 pub struct Manager {
     rkt: Arc<Mutex<Racket>>,
-    pub store: Arc<RwLock<Store>>,
+    g: Arc<RwLock<DiGraph>>,
 }
 impl Manager {
     /// Initializes a new Manager, connecting to a new rocket instance and
     /// setting up list-routine storage.
     pub fn new() -> Result<Self, Error> {
+        let f = File::open("routines.graph")?;
+        let g = DiGraph::load(BufReader::new(f))?;
         let rkt = Racket::new()?;
-        let store = Store::new()?;
         Ok(Manager {
             rkt: Arc::new(Mutex::new(rkt)),
-            store: Arc::new(RwLock::new(store)),
+            g: Arc::new(RwLock::new(g)),
         })
     }
+
+    /// Finds up to `count`-many routines. In the future, this will allow for
+    /// flexible graph-based queries.
+    pub fn find(&self, count: u32) -> Result<Vec<String>, ()> {
+        Ok(
+            self.g
+                .read()
+                .expect("graph rwlock is poisoned")
+                .names
+                .iter()
+                .take(count as usize)
+                .cloned()
+                .collect(),
+        )
+    }
+
     /// Gets the routine if it exists.
     pub fn open_routine(&self, id: String) -> Option<Routine> {
-        if self.store
+        if self.g
             .read()
-            .expect("store rwlock is poisoned")
-            .g
+            .expect("graph rwlock is poisoned")
             .names
             .contains(&id)
         {
@@ -151,6 +162,7 @@ impl FromData for Input {
     }
 }
 
+
 /// All outputs must be of one of these forms.
 #[derive(Serialize, Deserialize, Debug)]
 #[serde(untagged)]
@@ -159,6 +171,7 @@ pub enum Output {
     Number(i32),
     Array(Vec<i32>),
 }
+
 
 /// Allows interaction with the a routine. Created by a [`Manager`].
 ///
@@ -262,22 +275,6 @@ impl Racket {
         let mut s = String::new();
         self.stdout.read_line(&mut s)?;
         Ok(s)
-    }
-}
-
-/// Store maintains a graph of the list routines.
-pub struct Store {
-    g: DiGraph,
-}
-impl Store {
-    fn new() -> Result<Self, graph::Error> {
-        let f = File::open("routines.graph")?;
-        let g = DiGraph::load(BufReader::new(f))?;
-        Ok(Store { g })
-    }
-
-    pub fn find(&self, count: u32) -> Result<Vec<String>, ()> {
-        Ok(self.g.names.iter().take(count as usize).cloned().collect())
     }
 }
 

@@ -94,10 +94,7 @@ fn find(mgr: State<Manager>, mut form: Form) -> JsonResponse {
         Ok(f) => f,
         Err(_) => return JsonResponse(Status::BadRequest, json!({"error": "invalid query"})),
     };
-    mgr.store
-        .read()
-        .expect("store rwlock is poisoned")
-        .find(form.count.unwrap_or(DEFAULT_FIND_COUNT))
+    mgr.find(form.count.unwrap_or(DEFAULT_FIND_COUNT))
         .map_err(|_| {
             JsonResponse(
                 Status::InternalServerError,
