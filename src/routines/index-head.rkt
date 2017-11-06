@@ -12,5 +12,5 @@
 (define generate (generate-many
   (λ (params)
      (let ([len (hash-ref-number params 'len (random 1 8))])
-       (append (list (random 1 (+ 1 len)))
-               (random-list #:len len))))))
+       (append (list (random 1 len))
+               (random-list #:len (- len 1)))))))
