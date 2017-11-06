@@ -52,4 +52,4 @@ existing routine implementations for an example.
 
 ## Testing
 
-Run `cargo test -- --nocapture` to test all of the routines.
+Run `cargo test api_success -- --nocapture` to test all of the routines.

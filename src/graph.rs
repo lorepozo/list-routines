@@ -58,7 +58,7 @@ impl From<ParseIntError> for Error {
 /// and _C_, where _A_ points to _B_, _B_ points to _C_, and _C_ points to _A_.
 /// The serialized representation is:
 ///
-/// ```
+/// ```text
 /// A B C
 /// 1: 2
 /// 2: 3
@@ -69,7 +69,7 @@ impl From<ParseIntError> for Error {
 /// follows (note that the vertex numbers are zero-indexed here, unlike in the
 /// serial representation):
 ///
-/// ```
+/// ```rust,ignore
 /// DiGraph {
 ///     names: vec!["A", "B", "C"],
 ///     edges: vec![vec![1], vec![2], vec![0]],
@@ -81,9 +81,20 @@ impl From<ParseIntError> for Error {
 /// Given a vertex name, you can get the names of adjacent vertices:
 ///
 /// ```
-/// let name = "vertex-name";
+/// use listroutines::graph::DiGraph;
+/// use std::io::BufReader;
+///
+/// let s = "A B C
+/// 1: 2 3
+/// 2: 3
+/// ";
+/// let f = BufReader::new(s.as_bytes());
+/// let graph = DiGraph::load(f).unwrap();
+///
+/// let name = "A";
 /// let i = graph.find(name).unwrap();
-/// let adj: Vec<String> = graph.edges[i].iter().map(|j| graph.names[j]).collect();
+/// let adj: Vec<&str> = graph.edges[i].iter().map(|&j| &*graph.names[j]).collect();
+/// assert_eq!(adj, vec!["B", "C"]);
 /// ```
 ///
 /// [`names`]: #structfield.names

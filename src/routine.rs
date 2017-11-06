@@ -74,26 +74,6 @@ impl From<io::Error> for Error {
 /// connection as well as list routine storage. It is used to interact with
 /// particular list routines via the [`open_routine`] function.
 ///
-/// ## Examples
-///
-/// Find some routines:
-///
-/// ```
-/// let routine_names = mgr.find(4).unwrap();
-/// ```
-///
-/// Evaluate a routine:
-///
-/// ```
-/// let routine_name = String::from("evens");
-/// let inp = vec![1, 2, 8, 5, 3];
-/// let routine = mgr.open_routine(routine_name)
-///                  .expect("routine not found");
-/// let out = routine.evaluate(inp)
-///                  .expect("internal error");
-/// assert_eq!(out, Some(Output::Array(vec![2, 8])));
-/// ```
-///
 /// [`open_routine`]: fn.open_routine.html
 pub struct Manager {
     rkt: Arc<Mutex<Racket>>,
@@ -114,6 +94,15 @@ impl Manager {
 
     /// Finds up to `count`-many routines. In the future, this will allow for
     /// flexible graph-based queries.
+    ///
+    /// ## Examples
+    ///
+    /// ```
+    /// use listroutines::routine::Manager;
+    /// let mgr = Manager::new().unwrap();
+    ///
+    /// let routine_names = mgr.find(4).unwrap();
+    /// ```
     pub fn find(&self, count: u32) -> Result<Vec<String>, ()> {
         Ok(
             self.g
@@ -128,6 +117,22 @@ impl Manager {
     }
 
     /// Gets the routine if it exists.
+    ///
+    /// ## Examples
+    ///
+    /// ```
+    /// use listroutines::routine::{Input, Output, Manager};
+    /// let mgr = Manager::new().unwrap();
+    ///
+    /// let routine_name = String::from("evens");
+    /// let inp = Input::Array(vec![1, 2, 8, 5, 3]);
+    ///
+    /// let routine = mgr.open_routine(routine_name)
+    ///                  .expect("routine not found");
+    /// let out = routine.evaluate(inp)
+    ///                  .expect("internal error");
+    /// assert_eq!(out, Some(Output::Array(vec![2, 8])));
+    /// ```
     pub fn open_routine(&self, id: String) -> Option<Routine> {
         if self.g
             .read()
@@ -145,7 +150,7 @@ impl Manager {
 
 
 /// All inputs must be of one of these forms.
-#[derive(Serialize, Deserialize, Debug)]
+#[derive(Serialize, Deserialize, PartialEq, Debug)]
 #[serde(untagged)]
 pub enum Input {
     Number(i32),
@@ -164,7 +169,7 @@ impl FromData for Input {
 
 
 /// All outputs must be of one of these forms.
-#[derive(Serialize, Deserialize, Debug)]
+#[derive(Serialize, Deserialize, PartialEq, Debug)]
 #[serde(untagged)]
 pub enum Output {
     Bool(bool),
@@ -175,24 +180,6 @@ pub enum Output {
 
 /// Allows interaction with the a routine. Created by a [`Manager`].
 ///
-/// ## Examples
-///
-/// ```
-/// let routine_name = "len";
-/// let routine = mgr.open_routine(routine_name)
-///                  .expect("routine not found");
-/// // evaluation
-/// assert_eq!(
-///   routine.evaluate(Input::Array(vec![1, 1])).unwrap(),
-///   Some(Output::Number(2)),
-/// );
-/// // examples
-/// for inp in routine.examples().unwrap() {
-///   // must be valid (Some)
-///   assert!(routine.evaluate(inp).unwrap().is_some());
-/// }
-/// ```
-///
 /// [`Manager`]: struct.Manager.html
 pub struct Routine {
     id: String,
@@ -201,6 +188,21 @@ pub struct Routine {
 impl Routine {
     /// Validates and executes the input for the routine. Invalid input will
     /// give Ok(None).
+    ///
+    /// ## Examples
+    ///
+    /// ```
+    /// use listroutines::routine::{Input, Output, Manager};
+    /// let mgr = Manager::new().unwrap();
+    ///
+    /// let routine_name = String::from("len");
+    /// let routine = mgr.open_routine(routine_name)
+    ///                  .expect("routine not found");
+    ///
+    /// let inp = Input::Array(vec![1, 1]);
+    /// let out = routine.evaluate(inp).unwrap();
+    /// assert_eq!(out, Some(Output::Number(2)));
+    /// ```
     pub fn evaluate(&self, inp: Input) -> Result<Option<Output>, Error> {
         let op = json!({
             "op": "evaluate",
@@ -215,6 +217,20 @@ impl Routine {
     }
 
     /// Gives the examples of valid inputs for the routine.
+    ///
+    /// ```
+    /// use listroutines::routine::{Input, Manager};
+    /// let mgr = Manager::new().unwrap();
+    ///
+    /// let routine_name = String::from("len");
+    /// let routine = mgr.open_routine(routine_name)
+    ///                  .expect("routine not found");
+    ///
+    /// for inp in routine.examples().unwrap() {
+    ///     // all examples are valid (is_some)
+    ///     assert!(routine.evaluate(inp).unwrap().is_some());
+    /// }
+    /// ```
     pub fn examples(&self) -> Result<Vec<Input>, Error> {
         let op = json!({
             "op": "examples",
@@ -228,6 +244,29 @@ impl Routine {
     }
 
     /// Generates a given number of valid inputs for the routine.
+    ///
+    /// ```
+    /// use listroutines::routine::{Input, Manager};
+    /// use std::collections::HashMap;
+    /// let mgr = Manager::new().unwrap();
+    ///
+    /// let routine_name = String::from("dedup");
+    /// let routine = mgr.open_routine(routine_name)
+    ///                  .expect("routine not found");
+    ///
+    /// let mut params = HashMap::new();
+    /// params.insert("count", "2"); // all routines support "count" parameter
+    /// params.insert("len", "8"); // many routines support "len" parameter
+    ///
+    /// let inps = routine.generate(params).unwrap();
+    /// assert_eq!(inps.len(), 2); // we requested two inputs
+    /// for inp in inps {
+    ///     match inp {
+    ///         Input::Array(l) => assert_eq!(l.len(), 8), // we requested length 8
+    ///         _ => panic!("dedup can't handle non-lists"),
+    ///     }
+    /// }
+    /// ```
     pub fn generate(&self, params: HashMap<&str, &str>) -> Result<Vec<Input>, Error> {
         let params: serde_json::Value = json!(params);
         let op = json!({

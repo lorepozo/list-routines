@@ -4,7 +4,7 @@
 //! one of a number, list of numbers, or list of lists of numbers, and the
 //! output is either a Boolean, number, or list of numbers.
 //!
-//! ```
+//! ```text
 //! INPUT:   Num | List<Num> | List<List<Num>>
 //! OUTPUT:  Bool | Num | List<Num>
 //! ROUTINE: INPUT => OUTPUT
