@@ -10,7 +10,8 @@ OUTPUT:  Bool | Num | List<Num>
 ROUTINE: INPUT => OUTPUT
 ```
 
-This dataset is in the form of a web server.
+This dataset is in the form of a web server. It is currently **highly
+experimental** and subject to significant frequent change.
 
 ## API
 
