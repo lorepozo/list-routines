@@ -23,6 +23,20 @@ use routine::{Input, Manager};
 /// many items.
 const DEFAULT_FIND_COUNT: u32 = 1;
 
+/// An http redirect response.
+#[derive(Clone, Debug)]
+struct Redirect(Status, String);
+impl<'r> response::Responder<'r> for Redirect {
+    fn respond_to(self, _: &request::Request) -> response::Result<'r> {
+        Ok(
+            response::Response::build()
+                .status(self.0)
+                .raw_header("Location", self.1)
+                .finalize(),
+        )
+    }
+}
+
 /// An http response comprising of JSON data.
 #[derive(Clone, Debug)]
 struct JsonResponse(Status, serde_json::Value);
@@ -211,9 +225,21 @@ fn catch_internal_server_error() -> JsonResponse {
     )
 }
 
+/// The root endpoint simply redirects to the project homepage,
+/// [lucasem.github.io/list-routines].
+///
+/// [lucasem.github.io/list-routines]: https://lucasem.github.io/list-routines/
+#[get("/")]
+fn homepage_redirect() -> Redirect {
+    Redirect(
+        Status::PermanentRedirect,
+        String::from("https://lucasem.github.io/list-routines"),
+    )
+}
+
 /// Attaches the api to the root of the given `Rocket` instance.
 pub fn mount(r: rocket::Rocket) -> rocket::Rocket {
-    r.mount("/", routes![find, gen, examples, eval])
+    r.mount("/", routes![homepage_redirect, find, gen, examples, eval])
         .manage(Manager::new().expect("initialize routine manager"))
         .catch(
             catchers![catch_bad_request, catch_not_found, catch_internal_server_error],

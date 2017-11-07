@@ -10,21 +10,8 @@ OUTPUT:  Bool | Num | List<Num>
 ROUTINE: INPUT => OUTPUT
 ```
 
-This dataset is in the form of a web server, with routes as follows:
-- GET **`/find`** returns a list of `id`s of routines in the dataset. It currently
-  takes (optionally) one query argument, `count`: e.g. `/find?count=2`.
-  Eventually support will be added for more constraints on finding.
-- GET **`/examples/<id>`** returns a list of `INPUT`s for the given routine. These
-  inputs should be representative of the routine's function.
-- GET **`/gen/<id>`** returns a list of `INPUT`s for the routine that have been
-  randomly generated. It currently takes (optionally) one query argument,
-  `count`: e.g. `/gen/len?count=3`.
-- POST **`/eval/<id>`** takes in json data representing input for the
-  routine, and returns an `OUTPUT`. Invalid input for the routine results in
-  a bad request error (HTTP 400).
-
-All successful responses are of the form `{"result": <result>}`. All
-unsuccessful responses are of the form `{"error": "explanation"}`.
+This dataset is in the form of a web server. For information on using it,
+see the [Project Homepage](https://lucasem.github.io/list-routines/).
 
 ## Installation
 
