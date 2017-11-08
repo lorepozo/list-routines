@@ -132,3 +132,18 @@ new routine, consider that:
 
 Contact me at [lucas@lucasem.com](mailto:lucas@lucasem.com) if you have
 further questions.
+
+# Not yet implemented
+
+The following features will be implemented soon:
+- Parameterized routines: routines that are specified by parameters.
+  For example, `add-k` could require a parameter such as `k=2` which would
+  add the number `k` to each element in a list. There are ways to make this
+  easy to use and reason about, programmatically.
+- Partial ordering over routines: information on conceptual
+  dependency between routines.
+- Properties of routines: simple tags to associate with routines.
+- Complex find queries: use the partial ordering and properties to constrain
+  search for routines. For example: _which routines depend on `head`?_; or
+  _what routines does `count-head-in-tail` depend on?_; or _what routines
+  depend on `head` and return a boolean_?
