@@ -18,13 +18,19 @@ experimental** and subject to significant frequent change.
 All successful responses are of the form `{"result": <result>}`. All
 unsuccessful responses are of the form `{"error": "explanation"}`.
 
+The following usage examples, using the `curl` command-line tool, assume
+you've set a shell variable with the api url:
+
+```bash
+$ api="http://localhost:8000"
+```
+
 - **FIND** (GET) `/find` returns a list of `id`s of routines in the dataset.
   It currently takes (optionally) one query argument, `count`: e.g.
   `/find?count=2`. Eventually support will be added for more constraints on
   finding.
 
   ```bash
-  $ api="http://list-routines.xvm.mit.edu/api"
   $ curl "$api/find?count=3"
   {"result": ["len", "odds", "evens"]}
   ```
@@ -33,7 +39,6 @@ unsuccessful responses are of the form `{"error": "explanation"}`.
   function.
 
   ```bash
-  $ api="http://list-routines.xvm.mit.edu/api"
   $ curl "$api/examples/len"
   {"result": [[1,2,3],[0],[1,1,2,1]]}
   ```
@@ -43,7 +48,6 @@ unsuccessful responses are of the form `{"error": "explanation"}`.
   have the `len` argument to constrain the length of generated inputs.
 
   ```bash
-  $ api="http://list-routines.xvm.mit.edu/api"
   $ curl "$api/gen/index-head?count=3&len=3"
   {"result":[[2,13,9],[1,7,7],[1,4,14]]}
   ```
@@ -52,7 +56,6 @@ unsuccessful responses are of the form `{"error": "explanation"}`.
   results in a bad request error (HTTP 400).
 
   ```bash
-  $ api="http://list-routines.xvm.mit.edu/api"
   $ curl -XPOST "$api/eval/len" --data "[5, 1, 2, 0]"
   {"result":4}
   ```
@@ -60,7 +63,7 @@ unsuccessful responses are of the form `{"error": "explanation"}`.
 ## Python driver
 
 To use the python driver for this API, copy
-[`listroutines.py`](https://github.com/lucasem/list-routines/blob/master/listroutines.py)
+[listroutines.py](https://github.com/lucasem/list-routines/blob/master/listroutines.py)
 to the directory where you are writing your python script.
 
 You must be using python 3 and have installed the requests library (`pip
@@ -72,12 +75,12 @@ import listroutines as lr
 # FIND returns objects of class lr.Routine.
 routines = lr.find(count=3)
 for routine in routines:
-  print(routine.id())
+    print(routine.id())
 # -> len
+# -> index-head
 # -> odds
-# -> evens
 
-# create a routine using its id.
+# open a routine using its id.
 evens = lr.Routine("evens")
 
 # EXAMPLES returns list of inputs.
@@ -104,3 +107,6 @@ print(evens.gen(count=3))
 print(evens.gen(count=3, len=2))
 # -> [[11, 12], [16, 12], [10, 10]]
 ```
+
+Advanced users can set the `listroutines.api` variable to the url of the API
+server (defaults to `http://localhost:8000`).
