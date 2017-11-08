@@ -74,37 +74,31 @@ import listroutines as lr
 
 # FIND returns objects of class lr.Routine.
 routines = lr.find(count=3)
-for routine in routines:
-    print(routine.id())
-# -> len
-# -> index-head
-# -> odds
+[routine.id() for routine in routines]
+# -> ["len", "index-head", "odds"]
 
 # open a routine using its id.
 evens = lr.Routine("evens")
 
 # EXAMPLES returns list of inputs.
-examples = evens.examples()
-print(examples)
+evens.examples()
 # -> [[2, 0, 4], [2, 5, 4, 2, 0, 5, 1, 1]]
 
 # EVAL evalutes the routine on given input.
-out = evens.eval([2, 5, 4, 2, 0, 5, 1, 1])
-print(out)
+evens.eval([2, 5, 4, 2, 0, 5, 1, 1])
 # -> [2, 4, 2, 0]
 
 # GEN returns a list of newly-generates valid routine inputs.
 # Defaults to returning one input.
-generated = evens.gen()
-print(generated)
+evens.gen()
 # -> [[4, 6]]
 
 # GEN takes parameters.
 # All routines accept the "count" parameter, and most routines accept the "len"
 # parameter. See routine description to determine what parameters can be used.
-print(evens.gen(count=3))
+evens.gen(count=3)
 # -> [[7, 7, 12, 7], [14, 5, 16, 8, 11, 12, 3], [15, 9, 2]]
-print(evens.gen(count=3, len=2))
+evens.gen(count=3, len=2)
 # -> [[11, 12], [16, 12], [10, 10]]
 ```
 
