@@ -1,8 +1,12 @@
 # list-routines
 
-This is a dataset for program learning. The routines in this dataset take in
-one of a number, list of numbers, or list of lists of numbers, and the
-output is either a Boolean, number, or list of numbers.
+**Table of Contents**:
+* TOC
+{:toc}
+
+This is an interactive dataset for program learning. The routines in this
+dataset take in one of a number, list of numbers, or list of lists of
+numbers, and the output is either a Boolean, number, or list of numbers.
 
 ```
 INPUT:   Num | List<Num> | List<List<Num>>
@@ -13,7 +17,7 @@ ROUTINE: INPUT => OUTPUT
 This dataset is in the form of a web server. It is currently **highly
 experimental** and subject to significant frequent change.
 
-## API
+# Web API
 
 All successful responses are of the form `{"result": <result>}`. All
 unsuccessful responses are of the form `{"error": "explanation"}`.
@@ -51,7 +55,7 @@ $ api="http://localhost:8000"
   $ curl "$api/gen/index-head?count=3&len=3"
   {"result":[[2,13,9],[1,7,7],[1,4,14]]}
   ```
-- **EVALUATE** (POST) `/eval/<id>` takes in json data representing input for
+- **EVALUATE** (POST) `/eval/<id>` takes in JSON data representing input for
   the routine, and returns an `OUTPUT`. Invalid input for the routine
   results in a bad request error (HTTP 400).
 
@@ -60,14 +64,14 @@ $ api="http://localhost:8000"
   {"result":4}
   ```
 
-## Python driver
+# Python API
 
 To use the python driver for this API, copy
 [listroutines.py](https://github.com/lucasem/list-routines/blob/master/listroutines.py)
 to the directory where you are writing your python script.
 
-You must be using python 3 and have installed the requests library (`pip
-install requests`).
+You must be using python &#8805; 3.6 and have installed the requests library
+(`pip install requests`).
 
 ```python
 import listroutines as lr
@@ -84,7 +88,7 @@ evens = lr.Routine("evens")
 evens.examples()
 # -> [[2, 0, 4], [2, 5, 4, 2, 0, 5, 1, 1]]
 
-# EVAL evalutes the routine on given input.
+# EVAL evaluates the routine on given input.
 evens.eval([2, 5, 4, 2, 0, 5, 1, 1])
 # -> [2, 4, 2, 0]
 
@@ -102,5 +106,19 @@ evens.gen(count=3, len=2)
 # -> [[11, 12], [16, 12], [10, 10]]
 ```
 
-Advanced users can set the `listroutines.api` variable to the url of the API
-server (defaults to `http://localhost:8000`).
+Advanced users can set the `listroutines.api` variable to the api url
+(defaults to `http://localhost:8000`).
+
+# Adding new routines
+
+To petition for adding a new routine, open a pull request on GitHub with the
+new routine source file and updated `routines.graph` file. When designing a
+new routine, consider that:
+- routines should be reasonable for a human to learn.
+- routines should have a succinct id.
+- routines that are complex should specify conceptual dependencies. If there
+  are prerequisite concepts that aren't yet in the dataset, add those
+  routines as well.
+
+Contact me at [lucas@lucasem.com](mailto:lucas@lucasem.com) if you have
+further questions.
