@@ -15,7 +15,17 @@ ROUTINE: INPUT => OUTPUT
 ```
 
 This dataset is in the form of a web server. It is currently **highly
-experimental** and subject to significant frequent change.
+experimental** and subject to significant frequent change. Information
+related to not-yet-implemented features are marked with (*).
+
+# Tasks
+
+Here are a few machine learning tasks that this dataset aims to provide:
+- Learning a routine via blackbox evaluation.
+- Learning a routine via input-output pairs.
+- Learning a routine via input-output pairs, plus extra valid inputs.
+- Generating adversarial/informative new inputs.
+- (*) Determining whether a routine is conceptually dependent on another routine.
 
 # Web API
 
@@ -116,8 +126,8 @@ new routine source file and updated `routines.graph` file. When designing a
 new routine, consider that:
 - routines should be reasonable for a human to learn.
 - routines should have a succinct id.
-- routines that are complex should specify conceptual dependencies. If there
-  are prerequisite concepts that aren't yet in the dataset, add those
+- (*) routines that are complex should specify conceptual dependencies. If
+  there are prerequisite concepts that aren't yet in the dataset, add those
   routines as well.
 
 Contact me at [lucas@lucasem.com](mailto:lucas@lucasem.com) if you have
