@@ -57,3 +57,50 @@ unsuccessful responses are of the form `{"error": "explanation"}`.
   {"result":4}
   ```
 
+## Python driver
+
+To use the python driver for this API, copy
+[`listroutines.py`](https://github.com/lucasem/list-routines/blob/master/listroutines.py)
+to the directory where you are writing your python script.
+
+You must be using python 3 and have installed the requests library (`pip
+install requests`).
+
+```python
+import listroutines as lr
+
+# FIND returns objects of class lr.Routine.
+routines = lr.find(count=3)
+for routine in routines:
+  print(routine.id())
+# -> len
+# -> odds
+# -> evens
+
+# create a routine using its id.
+evens = lr.Routine("evens")
+
+# EXAMPLES returns list of inputs.
+examples = evens.examples()
+print(examples)
+# -> [[2, 0, 4], [2, 5, 4, 2, 0, 5, 1, 1]]
+
+# EVAL evalutes the routine on given input.
+out = evens.eval([2, 5, 4, 2, 0, 5, 1, 1])
+print(out)
+# -> [2, 4, 2, 0]
+
+# GEN returns a list of newly-generates valid routine inputs.
+# Defaults to returning one input.
+generated = evens.gen()
+print(generated)
+# -> [[4, 6]]
+
+# GEN takes parameters.
+# All routines accept the "count" parameter, and most routines accept the "len"
+# parameter. See routine description to determine what parameters can be used.
+print(evens.gen(count=3))
+# -> [[7, 7, 12, 7], [14, 5, 16, 8, 11, 12, 3], [15, 9, 2]]
+print(evens.gen(count=3, len=2))
+# -> [[11, 12], [16, 12], [10, 10]]
+```
