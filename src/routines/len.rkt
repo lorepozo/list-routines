@@ -1,9 +1,10 @@
 #lang racket
-(provide description validate evaluate examples generate)
+(provide description deps validate evaluate examples generate)
 
 (require "../prelude.rkt")
 
 (define description "gets the length of the list.")
+(define deps '())
 
 (define (validate l) (and (list? l) (andmap integer? l)))
 (define evaluate length)

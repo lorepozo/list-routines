@@ -1,9 +1,10 @@
 #lang racket
-(provide description validate evaluate examples generate)
+(provide description deps validate evaluate examples generate)
 
 (require "../prelude.rkt")
 
 (define description "gets elements after the first number which are not divisible by the first number.")
+(define deps '())
 
 (define (validate l) (and (list? l) (andmap integer? l) (not (empty? l))))
 (define (evaluate l) (filter

@@ -1,9 +1,10 @@
 #lang racket
-(provide description validate evaluate examples generate)
+(provide description deps validate evaluate examples generate)
 
 (require "../prelude.rkt")
 
 (define description "prepends the number two.")
+(define deps '())
 
 (define (validate l) (and (list? l) (andmap integer? l)))
 (define (evaluate l) (append '(2) l))

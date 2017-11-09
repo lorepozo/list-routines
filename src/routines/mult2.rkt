@@ -1,9 +1,10 @@
 #lang racket
-(provide description validate evaluate examples generate)
+(provide description deps validate evaluate examples generate)
 
 (require "../prelude.rkt")
 
 (define description "multiples each element by two.")
+(define deps '())
 
 (define (validate l) (and (list? l) (andmap integer? l)))
 (define (evaluate l) (map (λ (x) (* x 2)) l))
