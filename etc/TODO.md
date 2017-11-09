@@ -1,6 +1,5 @@
 ## TODO:
 
-- routine descriptions
 - parameterized examples
 - complex find queries
   - dependency graphs

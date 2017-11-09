@@ -1,7 +1,9 @@
 #lang racket
-(provide validate evaluate examples generate)
+(provide description validate evaluate examples generate)
 
 (require "../prelude.rkt")
+
+(define description "removes all duplicates, keeping only the first occurrence.")
 
 (define (validate l) (and (list? l) (andmap integer? l)))
 (define evaluate remove-duplicates)

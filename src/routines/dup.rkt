@@ -1,7 +1,9 @@
 #lang racket
-(provide validate evaluate examples generate)
+(provide description validate evaluate examples generate)
 
 (require "../prelude.rkt")
+
+(define description "duplicates each element.")
 
 (define (validate l) (and (list? l) (andmap integer? l)))
 (define (evaluate l) (append-map (λ (e) (list e e)) l))

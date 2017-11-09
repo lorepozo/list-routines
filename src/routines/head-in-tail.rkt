@@ -1,7 +1,9 @@
 #lang racket
-(provide validate evaluate examples generate)
+(provide description validate evaluate examples generate)
 
 (require "../prelude.rkt")
+
+(define description "checks if the first number occurs in the rest of the list.")
 
 (define (validate l) (and (list? l) (andmap integer? l) (not (empty? l))))
 (define (evaluate l) (not (false? (member (car l) (cdr l)))))
