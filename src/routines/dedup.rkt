@@ -3,13 +3,19 @@
 
 (require "../prelude.rkt")
 
-(define description "removes all duplicates, keeping only the first occurrence.")
+(define description "removes adjacent duplicates.")
 (define deps '())
 
 (define (validate l) (and (list? l) (andmap integer? l)))
-(define evaluate remove-duplicates)
-(define (examples) '((1 1 1) (2 5 4 2 0 5 1 1)))
+(define (evaluate l) 
+  (let lp ([l l] [prev null])
+    (cond [(empty? l) (list prev)]
+          [(null? prev) (lp (cdr l) (car l))]
+          [(eq? (car l) prev) (lp (cdr l) prev)]
+          [else (cons prev (lp (cdr l) (car l)))])))
+(define (examples) '((1 1 1) (2 5 4 2 2 0 5 1 1)))
 (define generate (generate-many
   (λ (params)
-     (let ([len (hash-ref-number params 'len (random 8))])
+     (let ([len (hash-ref-integer params 'len (random 8)
+                                  #:validator nonnegative?)])
        (random-list #:len len)))))

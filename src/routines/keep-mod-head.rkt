@@ -4,7 +4,7 @@
 (require "../prelude.rkt")
 
 (define description "gets elements after the first number which are divisible by the first number.")
-(define deps '())
+(define deps '("head" "tail" "evens" "odds"))
 
 (define (validate l) (and (list? l) (andmap integer? l) (not (empty? l))))
 (define (evaluate l) (filter
@@ -13,6 +13,7 @@
 (define (examples) '((3 1 3 4 7 6 9 2) (4 2 6 10 8 12) (1 2 3)))
 (define generate (generate-many
   (λ (params)
-     (let ([len (hash-ref-number params 'len (random 8))])
+     (let ([len (hash-ref-integer params 'len (random 1 8)
+                                 #:validator positive?)])
        (append (list (random 1 8))
-               (random-list #:len len))))))
+               (random-list #:len (- len 1)))))))

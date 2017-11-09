@@ -3,12 +3,12 @@
 
 (require "../prelude.rkt")
 
-(define description "duplicates each element.")
+(define description "removes all duplicates, keeping only the first occurrence.")
 (define deps '())
 
 (define (validate l) (and (list? l) (andmap integer? l)))
-(define (evaluate l) (append-map (λ (e) (list e e)) l))
-(define (examples) '((0) (7 2 4)))
+(define evaluate remove-duplicates)
+(define (examples) '((1 1 1) (2 5 4 2 2 0 5 1 1)))
 (define generate (generate-many
   (λ (params)
      (let ([len (hash-ref-integer params 'len (random 8)

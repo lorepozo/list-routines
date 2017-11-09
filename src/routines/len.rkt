@@ -11,5 +11,6 @@
 (define (examples) '((1 2 3) (0) (1 1 2 1)))
 (define generate (generate-many
   (λ (params)
-     (let ([len (hash-ref-number params 'len (random 8))])
+     (let ([len (hash-ref-integer params 'len (random 8)
+                                  #:validator nonnegative?)])
        (random-list #:len len)))))

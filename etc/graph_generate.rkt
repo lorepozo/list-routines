@@ -19,10 +19,7 @@
          (map path->string (directory-list "../src/routines")))))
 
 (define (routine-number routine)
-  (second (assoc routines routine)))
-
-(define (routine-deps routine)
-  (third (assoc routines routine)))
+  (second (assoc routine routines)))
 
 (define first-line (string-join (map first routines)))
 (define later-lines (map (λ (info)

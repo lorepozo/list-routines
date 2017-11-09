@@ -1,1 +1,6 @@
-add2 append2 dedup dup evens head-in-tail index-head keep-mod-head len mult2 odds prepend2 remove-mod-head
+add2 append2 count-head-in-tail count2 dedup dup evens head-in-tail head index-head keep-mod-head len mult2 odds prepend2 remove-mod-head tail uniq
+3: 9 17 4
+8: 9 17
+10: 9 17
+11: 9 17 7 14
+16: 9 17 7 14
