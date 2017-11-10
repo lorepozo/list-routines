@@ -39,13 +39,29 @@ $ api="http://localhost:8000"
 ```
 
 - **FIND** (GET) `/find` returns a list of `id`s of routines in the dataset.
-  It currently takes (optionally) one query argument, `count`: e.g.
-  `/find?count=2`. Eventually support will be added for more constraints on
-  finding.
+  It currently takes (optionally) three query arguments: `count`,
+  `depends_on`, `depended_on_by`. Eventually support will be added for more
+  constraints on finding.
+
+  `count` takes a nonnegative integer, `depends_on` and `depended_on_by`
+  take a routine id.
 
   ```bash
   $ curl "$api/find?count=3"
   {"result": ["len", "odds", "evens"]}
+
+  $ curl "$api/find?count=3&depended_on_by=count-head-in-tail"
+  {"result": ["head", "tail", "count2"]}
+
+  $ curl "$api/find?count=3&depends_on=head"
+  {"result": ["count-head-in-tail", "head-in-tail", "index-head"]}
+  ```
+- **DESCRIPTION** (GET) `/description/<id>` returns text of the
+  documentation for the given routine.
+
+  ```bash
+  $ curl "$api/description/len"
+  {"result": "gets the length of the list."}
   ```
 - **EXAMPLES** (GET) `/examples/<id>` returns a list of `INPUT`s for the
   given routine. These inputs should be representative of the routine's
@@ -77,7 +93,7 @@ $ api="http://localhost:8000"
 
 To use the python driver for this API, copy
 [listroutines.py](https://github.com/lucasem/list-routines/blob/master/listroutines.py)
-to the directory where you are writing your python script.
+(self-documented) to the directory where you are writing your python script.
 
 You must be using python &#8805; 3.6 and have installed the requests library
 (`pip install requests`).
@@ -85,10 +101,10 @@ You must be using python &#8805; 3.6 and have installed the requests library
 ```python
 import listroutines as lr
 
-# FIND returns objects of class lr.Routine.
+# FIND new routines
 routines = lr.find(count=3)
-[routine.id() for routine in routines]
-# -> ["len", "index-head", "odds"]
+[routine.id for routine in routines]
+# -> ['len', 'index-head', 'odds']
 
 # open a routine using its id.
 evens = lr.Routine("evens")
@@ -108,15 +124,26 @@ evens.gen()
 
 # GEN takes parameters.
 # All routines accept the "count" parameter, and most routines accept the "len"
-# parameter. See routine description to determine what parameters can be used.
+# parameter. See routine documentation to determine what parameters can be used.
 evens.gen(count=3)
 # -> [[7, 7, 12, 7], [14, 5, 16, 8, 11, 12, 3], [15, 9, 2]]
 evens.gen(count=3, len=2)
 # -> [[11, 12], [16, 12], [10, 10]]
+
+# Conceptual dependence with .dependencies()
+count_head_in_tail = lr.Routine("count-head-in-tail")
+[routine.id for routine in count_head_in_tail.dependencies()]
+# -> ['head', 'tail', 'count2']
+
+# Conceptual reverse-dependence with .depends()
+[routine.id for routine in evens.depends()]
+# -> ['keep-mod-head', 'remove-mod-head']
 ```
 
 Advanced users can set the `listroutines.api` variable to the api url
 (defaults to `http://localhost:8000`).
+
+# [Routine documentation](routines)
 
 # Adding new routines
 
@@ -138,8 +165,6 @@ The following features will be implemented soon:
   For example, `add-k` could require a parameter such as `k=2` which would
   add the number `k` to each element in a list. There are ways to make this
   easy to use and reason about, programmatically.
-- Partial ordering over routines: accessible information on conceptual
-  dependency between routines.
 - Properties of routines: simple tags to associate with routines.
 - Complex find queries: use the partial ordering and properties to constrain
   search for routines. For example: _which routines depend on `head`?_; or
