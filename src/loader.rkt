@@ -35,6 +35,7 @@
                                     (if (validate inp) (evaluate inp) 'null)))]
         [("examples") (evaluator 'examples)]
         [("generate") (evaluator `(generate ,gen-params))]
+        [("description") (evaluator 'description)]
         [else 'null]))))
   (newline)
   (flush-output)

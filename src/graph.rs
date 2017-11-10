@@ -108,6 +108,9 @@ pub struct DiGraph {
     /// Adjacency list. Indexed by vertex numbering. Values are lists of vertex
     /// numbers for adjacent vertices.
     pub edges: Vec<Vec<usize>>,
+    /// Reverse adjacency list. Indexed by vertex numbering. Values are lists
+    /// of vertex numbers for pre-adjacent vertices.
+    pub rev_edges: Vec<Vec<usize>>,
 }
 impl DiGraph {
     /// Returns the vertex numbering for the given vertex name.
@@ -152,6 +155,7 @@ impl DiGraph {
             .map(str::to_string)
             .collect();
         let mut edges: Vec<Vec<usize>> = vec![vec![]; names.len()];
+        let mut rev_edges: Vec<Vec<usize>> = vec![vec![]; names.len()];
         for line in lines {
             let line = line?;
             let mut it = line.splitn(2, ": ");
@@ -160,9 +164,14 @@ impl DiGraph {
             for jstr in rst.split_whitespace() {
                 let j: usize = jstr.parse()?;
                 edges[i - 1].push(j - 1);
+                rev_edges[j - 1].push(i - 1);
             }
         }
-        Ok(DiGraph { names, edges })
+        Ok(DiGraph {
+            names,
+            edges,
+            rev_edges,
+        })
     }
 }
 

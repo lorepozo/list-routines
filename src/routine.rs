@@ -13,7 +13,7 @@
 //! [`Manager`]: struct.Manager.html
 //! [`Routine`]: struct.Routine.html
 
-use std::collections::HashMap;
+use std::collections::{HashSet, HashMap};
 use std::fmt;
 use std::fs::File;
 use std::io::prelude::*;
@@ -35,6 +35,8 @@ pub enum Error {
     Graph(graph::Error),
     /// When racket fails to initialize.
     InitializeFailure,
+    /// When a routine does not exist.
+    RoutineNotFound(String),
     /// When racket responds with invalid JSON.
     InvalidJson,
     /// When the connection to racket is broken.
@@ -47,6 +49,7 @@ impl fmt::Display for Error {
         match *self {
             Error::Graph(ref err) => write!(f, "Graph error: {}", err),
             Error::InitializeFailure => write!(f, "failed to initialize racket"),
+            Error::RoutineNotFound(ref r) => write!(f, "routine not found: {}", r),
             Error::InvalidJson => write!(f, "racket gave invalid json"),
             Error::NoPipe => write!(f, "failed to connect pipe to racket"),
             Error::IO(ref err) => write!(f, "IO error: {}", err),
@@ -92,8 +95,9 @@ impl Manager {
         })
     }
 
-    /// Finds up to `count`-many routines. In the future, this will allow for
-    /// flexible graph-based queries.
+    /// Finds up to `count`-many routines. If supplied, `depends_on` and
+    /// `depended_on_by` constraint the query based on direct conceptual
+    /// dependency.
     ///
     /// ## Examples
     ///
@@ -101,17 +105,43 @@ impl Manager {
     /// use listroutines::routine::Manager;
     /// let mgr = Manager::new().unwrap();
     ///
-    /// let routine_names = mgr.find(4).unwrap();
+    /// let routine_names = mgr.find(4, None, None).unwrap();
     /// ```
-    pub fn find(&self, count: u32) -> Result<Vec<String>, ()> {
+    pub fn find(
+        &self,
+        count: u32,
+        depends_on: Option<String>,
+        depended_on_by: Option<String>,
+    ) -> Result<Vec<String>, Error> {
+        let g = self.g.read().expect("graph rwlock is poisoned");
+
+        // list of iterators to AND (intersect)
+        let mut its = Vec::new();
+        if let Some(dep) = depends_on.and_then(|ref x| g.find(x)) {
+            let it = g.rev_edges[dep].clone().into_iter();
+            its.push(it)
+        }
+        if let Some(rev_dep) = depended_on_by.and_then(|ref x| g.find(x)) {
+            let it = g.edges[rev_dep].clone().into_iter();
+            its.push(it)
+        }
+
+        // perform AND
+        let indices: Box<Iterator<Item = usize>> = match its.len() {
+            0 => Box::new(0..g.names.len()),
+            1 => Box::new(its.into_iter().flat_map(|x| x)),
+            _ => Box::new(
+                its.into_iter()
+                    .fold(HashSet::new(), |s, it| {
+                        s.intersection(&it.collect()).cloned().collect()
+                    })
+                    .into_iter(),
+            ),
+        };
         Ok(
-            self.g
-                .read()
-                .expect("graph rwlock is poisoned")
-                .names
-                .iter()
+            indices
                 .take(count as usize)
-                .cloned()
+                .map(|idx| g.names[idx].clone())
                 .collect(),
         )
     }
@@ -186,6 +216,33 @@ pub struct Routine {
     rkt: Arc<Mutex<Racket>>,
 }
 impl Routine {
+    /// Documentation for the routine.
+    ///
+    /// ## Examples
+    ///
+    /// ```
+    /// use listroutines::routine::Manager;
+    /// let mgr = Manager::new().unwrap();
+    ///
+    /// let routine_name = String::from("len");
+    /// let routine = mgr.open_routine(routine_name)
+    ///                  .expect("routine not found");
+    ///
+    /// assert_eq!(routine.description().unwrap(),
+    ///            "gets the length of the list.");
+    /// ```
+    pub fn description(&self) -> Result<String, Error> {
+        let op = json!({
+            "op": "description",
+            "routine": &self.id,
+        });
+        self.rkt
+            .lock()
+            .expect("racket mutex is poisoned")
+            .execute(op)
+            .and_then(|s| serde_json::from_str(&s).map_err(|_| Error::InvalidJson))
+    }
+
     /// Validates and executes the input for the routine. Invalid input will
     /// give Ok(None).
     ///
@@ -316,48 +373,3 @@ impl Racket {
         Ok(s)
     }
 }
-
-/*
-pub struct RoutineBuilder {
-    id: String,
-    description: Option<String>,
-    documentation: Option<String>,
-    examples: Option<Box<[Input]>>,
-    // sexp:
-    evaluator: String, // Input -> Output
-    generator: String, // RNG -> Input
-    validator: Option<String>, // Input -> bool
-
-    // parameterized_generator: Option<String>,
-    // example_parameters: Option<Box<[Input]>>
-}
-impl RoutineBuilder {
-    pub fn new(id: String, evaluator: String, generator: String) -> Self {
-        RoutineBuilder {
-            id: id,
-            description: None,
-            documentation: None,
-            examples: None,
-            evaluator: evaluator,
-            generator: generator,
-            validator: None,
-        }
-    }
-    pub fn with_description(mut self, desc: String) -> Self {
-        self.description = Some(desc);
-        self
-    }
-    pub fn with_documentations(mut self, docs: String) -> Self {
-        self.documentation = Some(docs);
-        self
-    }
-    pub fn with_examples(mut self, examples: Box<[Input]>) -> Self {
-        self.examples = Some(examples);
-        self
-    }
-    pub fn with_validator(mut self, validator: String) -> Self {
-        self.validator = Some(validator);
-        self
-    }
-}
-*/

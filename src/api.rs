@@ -90,9 +90,11 @@ impl<'a, 'r> request::FromRequest<'a, 'r> for Form<'a> {
 }
 
 /// Specifies fields for use with the `/find` endpoint.
-#[derive(Copy, Clone, FromForm)]
+#[derive(Clone, FromForm)]
 struct FindForm {
     count: Option<u32>,
+    depends_on: Option<String>,
+    depended_on_by: Option<String>,
 }
 
 /// The `/find` endpoint, via GET, returns a list of ids of routines in the
@@ -108,14 +110,42 @@ fn find(mgr: State<Manager>, mut form: Form) -> JsonResponse {
         Ok(f) => f,
         Err(_) => return JsonResponse(Status::BadRequest, json!({"error": "invalid query"})),
     };
-    mgr.find(form.count.unwrap_or(DEFAULT_FIND_COUNT))
-        .map_err(|_| {
+    mgr.find(
+        form.count.unwrap_or(DEFAULT_FIND_COUNT),
+        form.depends_on,
+        form.depended_on_by,
+    ).map_err(|_| {
             JsonResponse(
                 Status::InternalServerError,
                 json!({"error": "find operation failed"}),
             )
         })
         .map(Into::into)
+        .unwrap_or_else(|e| e)
+}
+
+/// The `/description/<id>` endpoint, via GET, returns text of the
+/// documentation for the given routine.
+#[get("/description/<id>")]
+fn description(mgr: State<Manager>, id: String) -> JsonResponse {
+    mgr.open_routine(id)
+        .ok_or(JsonResponse(
+            Status::NotFound,
+            json!({"error": "not found"}),
+        ))
+        .and_then(|routine| {
+            routine
+                .description()
+                .map_err(|e| {
+                    JsonResponse(
+                        Status::InternalServerError,
+                        json!({
+                            "error": format!("{}", e)
+                        }),
+                    )
+                })
+                .map(Into::into)
+        })
         .unwrap_or_else(|e| e)
 }
 
@@ -239,8 +269,10 @@ fn homepage_redirect() -> Redirect {
 
 /// Attaches the api to the root of the given `Rocket` instance.
 pub fn mount(r: rocket::Rocket) -> rocket::Rocket {
-    r.mount("/", routes![homepage_redirect, find, gen, examples, eval])
-        .manage(Manager::new().expect("initialize routine manager"))
+    r.mount(
+        "/",
+        routes![homepage_redirect, find, gen, description, examples, eval],
+    ).manage(Manager::new().expect("initialize routine manager"))
         .catch(
             catchers![catch_bad_request, catch_not_found, catch_internal_server_error],
         )

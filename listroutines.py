@@ -11,6 +11,7 @@ OUTPUT: bool, number, or list of numbers
 import requests
 
 api = "http://localhost:8000"
+max_count = 100
 
 
 def _api_result(req):
@@ -35,7 +36,10 @@ class APIError(BaseException):
 class Routine:
     """
     Provides an interface for a particular routine in the dataset.
+
+    Access the routine id with the .id member.
     """
+
     def __init__(self, id):
         """
         Creates a routine with the associated id.
@@ -44,13 +48,23 @@ class Routine:
         """
         self.id = id
 
-    def id():
+    def dependencies(self):
         """
-        The id associated with the routine.
+        The routines that this routine is directly conceptually dependent on.
 
-        :returns: string
+        :returns: list of Routine
         """
-        return self.id
+        return [Routine(id) for id in
+                _api_result(requests.get(f"{api}/find?count={max_count}&depended_on_by={self.id}"))]
+
+    def depends(self):
+        """
+        The routines that directly conceptually depend on this routine.
+
+        :returns: list of Routine
+        """
+        return [Routine(id) for id in
+                _api_result(requests.get(f"{api}/find?count={max_count}&depends_on={self.id}"))]
 
     def eval(self, inp):
         """
@@ -88,13 +102,14 @@ class Routine:
         return _api_result(requests.get(f"{api}/gen/{self.id}", params=kwargs))
 
 
-def find(count=1):
+def find(**kwargs):
     """
-    Gets a list of routines from the dataset.
+    Gets a list of routines from the dataset. Parameters can be "count" taking
+    a nonnegative number, or "depends_on"/"depended_on_by" taking a routine id.
 
-    :param count: number of routines to find
-    :returns: list of routines in the dataset
+    :param kwargs: find parameters
+    :returns: list of Routine
     :raises APIError: if some API error occurred
     """
     return [Routine(id) for id in
-            _api_result(requests.get(f"{api}/find?count={count}"))]
+            _api_result(requests.get(f"{api}/find", params=kwargs))]
