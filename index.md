@@ -15,8 +15,7 @@ ROUTINE: INPUT => OUTPUT
 ```
 
 This dataset is in the form of a web server. It is currently **highly
-experimental** and subject to significant frequent change. Information
-related to not-yet-implemented features are marked with (*).
+experimental** and subject to significant frequent change.
 
 # Tasks
 
@@ -25,7 +24,7 @@ Here are a few machine learning tasks that this dataset aims to provide:
 - Learning a routine via input-output pairs.
 - Learning a routine via input-output pairs, plus extra valid inputs.
 - Generating adversarial/informative new inputs.
-- (*) Determining whether a routine is conceptually dependent on another routine.
+- Determining whether a routine is conceptually dependent on another routine.
 
 # Web API
 
@@ -126,7 +125,7 @@ new routine source file and updated `routines.graph` file. When designing a
 new routine, consider that:
 - routines should be reasonable for a human to learn.
 - routines should have a succinct id.
-- (*) routines that are complex should specify conceptual dependencies. If
+- routines that are complex should specify conceptual dependencies. If
   there are prerequisite concepts that aren't yet in the dataset, add those
   routines as well.
 
@@ -140,7 +139,7 @@ The following features will be implemented soon:
   For example, `add-k` could require a parameter such as `k=2` which would
   add the number `k` to each element in a list. There are ways to make this
   easy to use and reason about, programmatically.
-- Partial ordering over routines: information on conceptual
+- Partial ordering over routines: accessible information on conceptual
   dependency between routines.
 - Properties of routines: simple tags to associate with routines.
 - Complex find queries: use the partial ordering and properties to constrain
