@@ -121,8 +121,7 @@ Advanced users can set the `listroutines.api` variable to the api url
 # Adding new routines
 
 To petition for adding a new routine, open a pull request on GitHub with the
-new routine source file and updated `routines.graph` file. When designing a
-new routine, consider that:
+new routine source file. When designing a new routine, consider that:
 - routines should be reasonable for a human to learn.
 - routines should have a succinct id.
 - routines that are complex should specify conceptual dependencies. If
