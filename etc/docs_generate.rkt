@@ -9,19 +9,22 @@
 (define (name routine)
   (substring routine 0 (- (string-length routine) 4)))
 
-(define (description routine)
+(define (info routine)
   (eval `(begin
            (require ,(string-append "../src/routines/" routine))
-           description)
+           (list description deps))
         (make-base-namespace)))
 
-(define (routine-docs)
-  (map (λ (r) (list (name r) (description r)))
+(define (routine-docs) ; list of (name description deps)
+  (map (λ (r) (cons (name r) (info r)))
        routines))
 
 (define (routine-template r)
-  (let ([routine     (first r)]
-        [description (second r)])
+  (let* ([routine     (first r)]
+         [description (second r)]
+         [deps        (third r)]
+         [conceptual-dependencies
+           (if (empty? deps) "" "Conceptual dependencies:")])
     (include-template "docs_template_routine.md")))
 
 (define (main-template content)
