@@ -6,9 +6,11 @@
 (define description "appends the number two.")
 (define deps '())
 
+(define examples '((1 1 1) (0) ()))
+
 (define (validate l) (and (list? l) (andmap integer? l)))
 (define (evaluate l) (append l '(2)))
-(define (examples) '((1 1 1) (0) ()))
+
 (define generate (generate-many
   (λ (params)
      (let ([len (hash-ref-integer params 'len (random 8)

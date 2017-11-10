@@ -1,6 +1,6 @@
 #lang racket
 
-(require web-server/templates)
+(require json web-server/templates)
 
 (define routines
   (map path->string
@@ -12,7 +12,7 @@
 (define (info routine)
   (eval `(begin
            (require ,(string-append "../src/routines/" routine))
-           (list description deps))
+           (list description deps (map list examples (map evaluate examples))))
         (make-base-namespace)))
 
 (define (routine-docs) ; list of (name description deps)
@@ -23,6 +23,7 @@
   (let* ([routine     (first r)]
          [description (second r)]
          [deps        (third r)]
+         [examples    (map (λ (ex) (map jsexpr->string ex)) (fourth r))]
          [conceptual-dependencies
            (if (empty? deps) "" "Conceptual dependencies:")])
     (include-template "docs_template_routine.md")))

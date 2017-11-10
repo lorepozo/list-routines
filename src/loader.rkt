@@ -33,7 +33,7 @@
         [("validate") (evaluator `(validate ',inp))]
         [("evaluate") (evaluator `(let ([inp ',inp])
                                     (if (validate inp) (evaluate inp) 'null)))]
-        [("examples") (evaluator '(examples))]
+        [("examples") (evaluator 'examples)]
         [("generate") (evaluator `(generate ,gen-params))]
         [else 'null]))))
   (newline)

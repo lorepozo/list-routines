@@ -6,9 +6,11 @@
 (define description "multiples each element by two.")
 (define deps '())
 
+(define examples '((3 2 1) (10)))
+
 (define (validate l) (and (list? l) (andmap integer? l)))
 (define (evaluate l) (map (λ (x) (* x 2)) l))
-(define (examples) '((3 2 1) (10)))
+
 (define generate (generate-many
   (λ (params)
      (let ([len (hash-ref-integer params 'len (random 8)

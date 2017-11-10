@@ -32,10 +32,23 @@ project root directory** (for now).
 ## Adding routines
 
 Routines are currently not relational, so adding a new routine is easy.
-Simply add a routine id, such as `sum`, to `./routines.graph` (on the first
-line, space-separated) and add the source file `./src/routines/sum.rkt`
-which provides `validate`, `evaluate`, `examples`, and `generate`. See the
-existing routine implementations for an example.
+Simply add the source file `./src/routines/sum.rkt`
+which provides:
+- `description`, string
+- `deps`, list of strings
+- `validate`, INPUT => bool
+- `evaluate`, INPUT => OUTPUT
+- `examples`, list of INPUTs
+- `generate`, params => list of INPUTs
+See existing routine implementations for an example.
+
+After routines are added, create the `routines.graph` file:
+
+```sh
+$ cd etc
+$ racket graph_generate.rkt
+output written to ../routines.graph
+```
 
 ## Testing
 

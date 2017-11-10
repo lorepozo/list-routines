@@ -6,9 +6,11 @@
 (define description "gets the first number in the list.")
 (define deps '())
 
+(define examples '((5 9 1) (12 4) (2 3 6 7)))
+
 (define (validate l) (and (list? l) (andmap integer? l) (not (empty? l))))
 (define evaluate first)
-(define (examples) '((5 9 1) (12 4) (2 3 6 7)))
+
 (define generate (generate-many
   (λ (params)
      (let ([len (hash-ref-integer params 'len (random 1 8)
