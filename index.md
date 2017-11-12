@@ -20,9 +20,9 @@ experimental** and subject to significant frequent change.
 # Tasks
 
 Here are a few machine learning tasks that this dataset aims to provide:
-- Learning a routine via blackbox evaluation.
-- Learning a routine via input-output pairs.
-- Learning a routine via input-output pairs, plus extra valid inputs.
+- Learning via blackbox evaluation.
+- Learning via input-output pairs.
+- Active learning.
 - Generating adversarial/informative new inputs.
 - Determining whether a routine is conceptually dependent on another routine.
 
