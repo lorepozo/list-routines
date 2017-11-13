@@ -56,7 +56,7 @@ fn connect_to_new_server() -> Client {
 }
 
 #[test]
-fn api_success() {
+fn routines() {
     let client = connect_to_new_server();
 
     let path = format!("/find?count={}", FIND_COUNT);

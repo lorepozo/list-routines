@@ -52,4 +52,4 @@ output written to ../routines.graph
 
 ## Testing
 
-Run `cargo test api_success -- --nocapture` to test all of the routines.
+Run `cargo test routines -- --nocapture` to test all of the routines.
