@@ -91,12 +91,17 @@ $ api="http://localhost:8000"
 
 # Python API
 
-To use the python driver for this API, copy
-[listroutines.py](https://github.com/lucasem/list-routines/blob/master/listroutines.py)
-(self-documented) to the directory where you are writing your python script.
+To use the python driver for this API you must be using python &#8805; 3.6.
+Clone the repository and execute the following:
 
-You must be using python &#8805; 3.6 and have installed the requests library
-(`pip install requests`).
+```sh
+$ pip install -e listroutines/py
+```
+
+The module at
+[listroutines.py](https://github.com/lucasem/list-routines/blob/master/py/listroutines.py)
+is self-documented.
+
 
 ```python
 import listroutines as lr
