@@ -24,6 +24,9 @@ Here are a few machine learning tasks that this dataset aims to provide:
 - Learning via input-output pairs.
 - Active learning.
 - Generating adversarial/informative new inputs.
+- Generating valid inputs.
+- Identifying valid inputs.
+- Determining restrictions on routine output.
 - Determining whether a routine is conceptually dependent on another routine.
 
 # Web API
