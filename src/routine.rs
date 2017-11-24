@@ -19,12 +19,14 @@ use std::fs::File;
 use std::io::prelude::*;
 use std::io::{self, BufReader};
 use std::process::{Command, ChildStdin, ChildStdout, Stdio};
-use std::sync::{Arc, Mutex, RwLock};
+use std::sync::{Arc, RwLock};
+use std::sync::mpsc::channel;
 
 use rocket::{Outcome, Request};
 use rocket::data::{self, Data, FromData};
 use rocket::http::Status;
 use serde_json;
+use workerpool::{Pool, Worker};
 
 use graph::{self, DiGraph};
 
@@ -79,7 +81,7 @@ impl From<io::Error> for Error {
 ///
 /// [`open_routine`]: fn.open_routine.html
 pub struct Manager {
-    rkt: Arc<Mutex<Racket>>,
+    pool: Pool<Racket>,
     g: Arc<RwLock<DiGraph>>,
 }
 impl Manager {
@@ -88,11 +90,9 @@ impl Manager {
     pub fn new() -> Result<Self, Error> {
         let f = File::open("routines.graph")?;
         let g = DiGraph::load(BufReader::new(f))?;
-        let rkt = Racket::new()?;
-        Ok(Manager {
-            rkt: Arc::new(Mutex::new(rkt)),
-            g: Arc::new(RwLock::new(g)),
-        })
+        let g = Arc::new(RwLock::new(g));
+        let pool = Pool::<Racket>::default();
+        Ok(Manager { g, pool })
     }
 
     /// Finds up to `count`-many routines. If supplied, `depends_on` and
@@ -170,8 +170,8 @@ impl Manager {
             .names
             .contains(&id)
         {
-            let rkt = Arc::clone(&self.rkt);
-            Some(Routine { id, rkt })
+            let pool = &self.pool;
+            Some(Routine { id, pool })
         } else {
             None
         }
@@ -211,11 +211,11 @@ pub enum Output {
 /// Allows interaction with the a routine. Created by a [`Manager`].
 ///
 /// [`Manager`]: struct.Manager.html
-pub struct Routine {
+pub struct Routine<'a> {
     id: String,
-    rkt: Arc<Mutex<Racket>>,
+    pool: &'a Pool<Racket>,
 }
-impl Routine {
+impl<'a> Routine<'a> {
     /// Documentation for the routine.
     ///
     /// ## Examples
@@ -236,11 +236,10 @@ impl Routine {
             "op": "description",
             "routine": &self.id,
         });
-        self.rkt
-            .lock()
-            .expect("racket mutex is poisoned")
-            .execute(op)
-            .and_then(|s| serde_json::from_str(&s).map_err(|_| Error::InvalidJson))
+        let (tx, rx) = channel();
+        self.pool.execute_to(tx, op);
+        let s = rx.recv().map_err(|_| Error::NoPipe)??;
+        serde_json::from_str(&s).map_err(|_| Error::InvalidJson)
     }
 
     /// Validates and executes the input for the routine. Invalid input will
@@ -266,11 +265,10 @@ impl Routine {
             "routine": &self.id,
             "input": inp,
         });
-        self.rkt
-            .lock()
-            .expect("racket mutex is poisoned")
-            .execute(op)
-            .and_then(|s| serde_json::from_str(&s).map_err(|_| Error::InvalidJson))
+        let (tx, rx) = channel();
+        self.pool.execute_to(tx, op);
+        let s = rx.recv().map_err(|_| Error::NoPipe)??;
+        serde_json::from_str(&s).map_err(|_| Error::InvalidJson)
     }
 
     /// Gives the examples of valid inputs for the routine.
@@ -293,11 +291,10 @@ impl Routine {
             "op": "examples",
             "routine": &self.id,
         });
-        self.rkt
-            .lock()
-            .expect("racket mutex is poisoned")
-            .execute(op)
-            .and_then(|s| serde_json::from_str(&s).map_err(|_| Error::InvalidJson))
+        let (tx, rx) = channel();
+        self.pool.execute_to(tx, op);
+        let s = rx.recv().map_err(|_| Error::NoPipe)??;
+        serde_json::from_str(&s).map_err(|_| Error::InvalidJson)
     }
 
     /// Generates a given number of valid inputs for the routine.
@@ -331,11 +328,10 @@ impl Routine {
             "routine": &self.id,
             "params": params,
         });
-        self.rkt
-            .lock()
-            .expect("racket mutex is poisoned")
-            .execute(op)
-            .and_then(|s| serde_json::from_str(&s).map_err(|_| Error::InvalidJson))
+        let (tx, rx) = channel();
+        self.pool.execute_to(tx, op);
+        let s = rx.recv().map_err(|_| Error::NoPipe)??;
+        serde_json::from_str(&s).map_err(|_| Error::InvalidJson)
     }
 }
 
@@ -344,19 +340,23 @@ struct Racket {
     stdin: ChildStdin,
     stdout: BufReader<ChildStdout>,
 }
-impl Racket {
-    fn new() -> Result<Self, Error> {
+impl Worker for Racket {
+    type Input = serde_json::Value;
+    type Output = Result<String, Error>;
+
+    fn new() -> Self {
         let child = Command::new("racket")
             .arg("src/loader.rkt")
             .stdin(Stdio::piped())
             .stdout(Stdio::piped())
             .stderr(Stdio::inherit())
             .spawn()
-            .map_err(|_| Error::InitializeFailure)?;
-        let stdin = child.stdin.ok_or(Error::NoPipe)?;
-        let stdout = child.stdout.ok_or(Error::NoPipe)?;
+            .map_err(|_| Error::InitializeFailure)
+            .unwrap();
+        let stdin = child.stdin.ok_or(Error::NoPipe).unwrap();
+        let stdout = child.stdout.ok_or(Error::NoPipe).unwrap();
         let stdout = BufReader::new(stdout);
-        Ok(Racket { stdin, stdout })
+        Racket { stdin, stdout }
     }
 
     /// Communication with racket is done via lines of back-and-forth JSON. This
@@ -364,7 +364,7 @@ impl Racket {
     /// the raw JSON string back if successful.
     ///
     /// Consult `loader.rkt` to see the valid operations.
-    fn execute(&mut self, op: serde_json::Value) -> Result<String, Error> {
+    fn execute(&mut self, op: Self::Input) -> Self::Output {
         self.stdin.write_all(op.to_string().as_bytes())?;
         self.stdin.write_all(b"\n")?;
         self.stdin.flush()?;
