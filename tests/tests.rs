@@ -10,7 +10,7 @@ use rocket::http::Status;
 use rocket::config::{Config, Environment, LoggingLevel};
 use serde::de::DeserializeOwned;
 
-use listroutines::api;
+use listroutines::api::{self, urlencode};
 use listroutines::routine::{Input, Output};
 
 const FIND_COUNT: u32 = 100;
@@ -62,30 +62,62 @@ fn routines() {
     let path = format!("/find?count={}", FIND_COUNT);
     let routines: Vec<String> = json_get(&client, &path);
     for routine in routines.into_iter() {
-        let path = format!("/examples/{}", &routine);
-        let examples: Vec<Input> = json_get(&client, &path);
-        for example in examples.into_iter() {
-            let path = format!("/eval/{}", routine);
-            let output: Output = json_post(&client, &path, serde_json::to_vec(&example).unwrap());
-            eprintln!(
-                "{}(example): {} -> {}",
-                &routine,
-                serde_json::to_string(&example).unwrap(),
-                serde_json::to_string(&output).unwrap()
-            )
-        }
+        let path = format!("/is-parametric/{}", &routine);
+        let is_parametric: bool = json_get(&client, &path);
 
-        let path = format!("/gen/{}?count={}", &routine, GENERATE_COUNT);
-        let gen_inputs: Vec<Input> = json_get(&client, &path);
-        for inp in gen_inputs.into_iter() {
-            let path = format!("/eval/{}", routine);
-            let output: Output = json_post(&client, &path, serde_json::to_vec(&inp).unwrap());
-            eprintln!(
-                "{}(generated): {} -> {}",
-                &routine,
-                serde_json::to_string(&inp).unwrap(),
-                serde_json::to_string(&output).unwrap()
-            )
+        if is_parametric {
+            let path = format!("/example-params/{}", &routine);
+            let example_params: Vec<serde_json::Map<String, serde_json::Value>> =
+                json_get(&client, &path);
+            for example_param in example_params.into_iter() {
+                eprintln!(
+                    "{}(example-param): {}",
+                    &routine,
+                    serde_json::to_string(&example_param).unwrap(),
+                );
+                let url_param = urlencode(example_param);
+                let path = format!("/gen/{}?count={}&{}", &routine, GENERATE_COUNT, &url_param);
+                let gen_inputs: Vec<Input> = json_get(&client, &path);
+                for inp in gen_inputs.into_iter() {
+                    let path = format!("/eval/{}?{}", &routine, &url_param);
+                    let output: Output =
+                        json_post(&client, &path, serde_json::to_vec(&inp).unwrap());
+                    eprintln!(
+                        "{}(generated)[{}]: {} -> {}",
+                        &routine,
+                        &url_param,
+                        serde_json::to_string(&inp).unwrap(),
+                        serde_json::to_string(&output).unwrap()
+                    )
+                }
+            }
+        } else {
+            let path = format!("/examples/{}", &routine);
+            let examples: Vec<Input> = json_get(&client, &path);
+            for example in examples.into_iter() {
+                let path = format!("/eval/{}", routine);
+                let output: Output =
+                    json_post(&client, &path, serde_json::to_vec(&example).unwrap());
+                eprintln!(
+                    "{}(example): {} -> {}",
+                    &routine,
+                    serde_json::to_string(&example).unwrap(),
+                    serde_json::to_string(&output).unwrap()
+                )
+            }
+
+            let path = format!("/gen/{}?count={}", &routine, GENERATE_COUNT);
+            let gen_inputs: Vec<Input> = json_get(&client, &path);
+            for inp in gen_inputs.into_iter() {
+                let path = format!("/eval/{}", &routine);
+                let output: Output = json_post(&client, &path, serde_json::to_vec(&inp).unwrap());
+                eprintln!(
+                    "{}(generated): {} -> {}",
+                    &routine,
+                    serde_json::to_string(&inp).unwrap(),
+                    serde_json::to_string(&output).unwrap()
+                )
+            }
         }
     }
 }

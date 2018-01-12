@@ -1,8 +1,9 @@
 #lang racket
-(provide description deps validate evaluate examples generate)
+(provide is-parametric description deps validate evaluate examples generate)
 
 (require "../prelude.rkt")
 
+(define is-parametric #f)
 (define description "removes all duplicates, keeping only the first occurrence.")
 (define deps '())
 

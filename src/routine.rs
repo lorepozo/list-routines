@@ -13,12 +13,12 @@
 //! [`Manager`]: struct.Manager.html
 //! [`Routine`]: struct.Routine.html
 
-use std::collections::{HashSet, HashMap};
+use std::collections::HashSet;
 use std::fmt;
 use std::fs::File;
 use std::io::prelude::*;
 use std::io::{self, BufReader};
-use std::process::{Command, ChildStdin, ChildStdout, Stdio};
+use std::process::{ChildStdin, ChildStdout, Command, Stdio};
 use std::sync::{Arc, RwLock};
 use std::sync::mpsc::channel;
 
@@ -73,7 +73,6 @@ impl From<io::Error> for Error {
         Error::IO(err)
     }
 }
-
 
 /// The `Manager` governs the dataset. It maintains the interactive racket
 /// connection as well as list routine storage. It is used to interact with
@@ -138,12 +137,10 @@ impl Manager {
                     .into_iter(),
             ),
         };
-        Ok(
-            indices
-                .take(count as usize)
-                .map(|idx| g.names[idx].clone())
-                .collect(),
-        )
+        Ok(indices
+            .take(count as usize)
+            .map(|idx| g.names[idx].clone())
+            .collect())
     }
 
     /// Gets the routine if it exists.
@@ -159,7 +156,7 @@ impl Manager {
     ///
     /// let routine = mgr.open_routine(routine_name)
     ///                  .expect("routine not found");
-    /// let out = routine.evaluate(inp)
+    /// let out = routine.evaluate(inp.into())
     ///                  .expect("internal error");
     /// assert_eq!(out, Some(Output::Array(vec![2, 8])));
     /// ```
@@ -177,7 +174,6 @@ impl Manager {
         }
     }
 }
-
 
 /// All inputs must be of one of these forms.
 #[derive(Serialize, Deserialize, PartialEq, Debug)]
@@ -197,6 +193,36 @@ impl FromData for Input {
     }
 }
 
+#[derive(Serialize, Deserialize, PartialEq, Debug)]
+pub struct EvalInput {
+    pub input: Input,
+
+    #[serde(default)] pub params: serde_json::Map<String, serde_json::Value>,
+}
+impl FromData for EvalInput {
+    type Error = serde_json::Error;
+    fn from_data(_: &Request, data: Data) -> data::Outcome<Self, Self::Error> {
+        match serde_json::from_reader(data.open()) {
+            Ok(v) => Outcome::Success(v),
+            Err(e) => Outcome::Failure((Status::BadRequest, e)),
+        }
+    }
+}
+impl From<Input> for EvalInput {
+    fn from(input: Input) -> EvalInput {
+        let params = serde_json::Map::new();
+        EvalInput { input, params }
+    }
+}
+impl EvalInput {
+    pub fn new(input: Input, params: serde_json::Value) -> Self {
+        let params = match params {
+            serde_json::Value::Object(map) => map,
+            _ => serde_json::Map::new(),
+        };
+        Self { input, params }
+    }
+}
 
 /// All outputs must be of one of these forms.
 #[derive(Serialize, Deserialize, PartialEq, Debug)]
@@ -207,8 +233,8 @@ pub enum Output {
     Array(Vec<i32>),
 }
 
-
 /// Allows interaction with the a routine. Created by a [`Manager`].
+/// Cannot exist without the existence of the underlying routine.
 ///
 /// [`Manager`]: struct.Manager.html
 pub struct Routine<'a> {
@@ -216,6 +242,33 @@ pub struct Routine<'a> {
     pool: &'a Pool<Racket>,
 }
 impl<'a> Routine<'a> {
+    /// Whether the routine is parametric.
+    ///
+    /// ## Examples
+    ///
+    /// ```
+    /// use listroutines::routine::Manager;
+    /// let mgr = Manager::new().unwrap();
+    ///
+    /// let routine_name = String::from("len");
+    /// let routine = mgr.open_routine(routine_name).unwrap();
+    /// assert!(!routine.is_parametric().unwrap());
+    ///
+    /// let routine_name = String::from("add-k");
+    /// let routine = mgr.open_routine(routine_name).unwrap();
+    /// assert!(routine.is_parametric().unwrap());
+    /// ```
+    pub fn is_parametric(&self) -> Result<bool, Error> {
+        let op = json!({
+            "op": "is-parametric",
+            "routine": &self.id,
+        });
+        let (tx, rx) = channel();
+        self.pool.execute_to(tx, op);
+        let s = rx.recv().map_err(|_| Error::NoPipe)??;
+        serde_json::from_str(&s).map_err(|_| Error::InvalidJson)
+    }
+
     /// Documentation for the routine.
     ///
     /// ## Examples
@@ -243,7 +296,7 @@ impl<'a> Routine<'a> {
     }
 
     /// Validates and executes the input for the routine. Invalid input will
-    /// give Ok(None).
+    /// give Ok(None). Parameters may be given for parametric routines.
     ///
     /// ## Examples
     ///
@@ -256,14 +309,34 @@ impl<'a> Routine<'a> {
     ///                  .expect("routine not found");
     ///
     /// let inp = Input::Array(vec![1, 1]);
-    /// let out = routine.evaluate(inp).unwrap();
+    /// let out = routine.evaluate(inp.into()).unwrap();
     /// assert_eq!(out, Some(Output::Number(2)));
     /// ```
-    pub fn evaluate(&self, inp: Input) -> Result<Option<Output>, Error> {
+    ///
+    /// ```
+    /// #[macro_use] extern crate serde_json;
+    ///
+    /// # extern crate listroutines;
+    /// # fn main() {
+    /// use listroutines::routine::{Input, Output, Manager, EvalInput};
+    /// let mgr = Manager::new().unwrap();
+    ///
+    /// let routine_name = String::from("add-k");
+    /// let routine = mgr.open_routine(routine_name)
+    ///                  .expect("routine not found");
+    ///
+    /// let inp = Input::Array(vec![1, 1]);
+    /// let params = json!({"k": 2});
+    /// let out = routine.evaluate(EvalInput::new(inp, params)).unwrap();
+    /// assert_eq!(out, Some(Output::Array(vec![3, 3])));
+    /// # }
+    /// ```
+    pub fn evaluate(&self, evalinput: EvalInput) -> Result<Option<Output>, Error> {
         let op = json!({
             "op": "evaluate",
             "routine": &self.id,
-            "input": inp,
+            "input": evalinput.input,
+            "params": evalinput.params,
         });
         let (tx, rx) = channel();
         self.pool.execute_to(tx, op);
@@ -283,7 +356,7 @@ impl<'a> Routine<'a> {
     ///
     /// for inp in routine.examples().unwrap() {
     ///     // all examples are valid (is_some)
-    ///     assert!(routine.evaluate(inp).unwrap().is_some());
+    ///     assert!(routine.evaluate(inp.into()).unwrap().is_some());
     /// }
     /// ```
     pub fn examples(&self) -> Result<Vec<Input>, Error> {
@@ -297,20 +370,51 @@ impl<'a> Routine<'a> {
         serde_json::from_str(&s).map_err(|_| Error::InvalidJson)
     }
 
+    /// Gives example parameters for a parametric routine.
+    ///
+    /// ```
+    /// use listroutines::routine::{Input, EvalInput, Manager};
+    /// let mgr = Manager::new().unwrap();
+    ///
+    /// let routine_name = String::from("add-k");
+    /// let routine = mgr.open_routine(routine_name)
+    ///                  .expect("routine not found");
+    ///
+    /// for params in routine.example_params().unwrap() {
+    ///     let input = Input::Array(vec![1, 5]);
+    ///     let evalinput = EvalInput { input, params };
+    ///     assert!(routine.evaluate(evalinput).unwrap().is_some());
+    /// }
+    /// ```
+    pub fn example_params(&self) -> Result<Vec<serde_json::Map<String, serde_json::Value>>, Error> {
+        let op = json!({
+            "op": "example-params",
+            "routine": &self.id,
+        });
+        let (tx, rx) = channel();
+        self.pool.execute_to(tx, op);
+        let s = rx.recv().map_err(|_| Error::NoPipe)??;
+        serde_json::from_str(&s).map_err(|_| Error::InvalidJson)
+    }
+
     /// Generates a given number of valid inputs for the routine.
     ///
     /// ```
+    /// #[macro_use] extern crate serde_json;
+    ///
+    /// # extern crate listroutines;
+    /// # fn main() {
     /// use listroutines::routine::{Input, Manager};
-    /// use std::collections::HashMap;
     /// let mgr = Manager::new().unwrap();
     ///
     /// let routine_name = String::from("dedup");
     /// let routine = mgr.open_routine(routine_name)
     ///                  .expect("routine not found");
     ///
-    /// let mut params = HashMap::new();
-    /// params.insert("count", "2"); // all routines support "count" parameter
-    /// params.insert("len", "8"); // many routines support "len" parameter
+    /// let mut params = json!({
+    ///     "count": 2, // all routines support "count" parameter
+    ///     "len": 8, // many routines support "len" parameter
+    /// });
     ///
     /// let inps = routine.generate(params).unwrap();
     /// assert_eq!(inps.len(), 2); // we requested two inputs
@@ -320,9 +424,9 @@ impl<'a> Routine<'a> {
     ///         _ => panic!("dedup can't handle non-lists"),
     ///     }
     /// }
+    /// # }
     /// ```
-    pub fn generate(&self, params: HashMap<&str, &str>) -> Result<Vec<Input>, Error> {
-        let params: serde_json::Value = json!(params);
+    pub fn generate(&self, params: serde_json::Value) -> Result<Vec<Input>, Error> {
         let op = json!({
             "op": "generate",
             "routine": &self.id,

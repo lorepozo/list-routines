@@ -1,25 +1,20 @@
 #lang racket
-(provide hash-ref-number hash-ref-integer nonnegative?)
+(provide hash-ref-integer nonnegative?)
 (provide generate-many random-list)
 
 (require math/distributions)
 
-(define (hash-ref-number h field default
-                         #:validator [valid? (λ (n) #t)])
-  (let ([value (string->number (hash-ref h field ""))])
-    (or (and (valid? value) value)
-        default)))
-
 (define (hash-ref-integer h field default
                           #:validator [valid? (λ (n) #t)])
-  (hash-ref-number h field default
-                   #:validator (λ (n) (and (integer? n) (valid? n)))))
+  (let ([value (hash-ref h field 'null)])
+    (or (and (integer? value) (valid? value) value)
+        default)))
 
 (define (nonnegative? x) (>= x 0))
 
 (define (generate-many generate-one)
   (λ (params)
-     (let lp ([count (hash-ref-number params 'count 1)])
+     (let lp ([count (hash-ref-integer params 'count 1)])
        (if (> count 0)
            (cons (generate-one params) (lp (- count 1)))
            null))))

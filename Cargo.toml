@@ -5,8 +5,8 @@ authors = ["Lucas Morales <lucas@lucasem.com>"]
 
 [dependencies]
 itertools = "0.7.1"
-rocket_codegen = { git = "https://github.com/SergioBenitez/Rocket.git", rev = "07d4d23" }
-rocket = { git = "https://github.com/SergioBenitez/Rocket.git", rev = "07d4d23" }
+rocket_codegen = "0.3.5"
+rocket = "0.3.5"
 serde = "1.0"
 serde_json = "1.0"
 serde_derive = "1.0"

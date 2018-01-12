@@ -1,10 +1,11 @@
 #lang racket
-(provide description deps validate evaluate examples generate)
+(provide is-parametric description deps validate evaluate examples generate)
 
 (require "../prelude.rkt")
 
+(define is-parametric #f)
 (define description "counts occurrences of the first number in the rest of the list.")
-(define deps '("head" "tail" "count2"))
+(define deps '("head" "tail" "count-k"))
 
 (define examples '((1 1 2) (1 2 3) (2 1 2) (2 3 4) (0 5 4 0 2) (3 1 3 3 2) (4 2 6 10 8 12)))
 

@@ -1,8 +1,9 @@
 #lang racket
-(provide description deps validate evaluate examples generate)
+(provide is-parametric description deps validate evaluate examples generate)
 
 (require "../prelude.rkt")
 
+(define is-parametric #f)
 (define description "removes adjacent duplicates.")
 (define deps '())
 
@@ -11,7 +12,7 @@
 (define (validate l) (and (list? l) (andmap integer? l)))
 (define (evaluate l) 
   (let lp ([l l] [prev null])
-    (cond [(empty? l) (list prev)]
+    (cond [(empty? l) (if (null? prev) prev (list prev))]
           [(null? prev) (lp (cdr l) (car l))]
           [(eq? (car l) prev) (lp (cdr l) prev)]
           [else (cons prev (lp (cdr l) (car l)))])))
