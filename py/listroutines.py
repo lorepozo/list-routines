@@ -57,6 +57,14 @@ class Routine:
         return [Routine(id) for id in
                 _api_result(requests.get(f"{api}/find?count={max_count}&depended_on_by={self.id}"))]
 
+    def is_parametric(self):
+        """
+        Whether this routine is parametric.
+
+        :returns: bool
+        """
+        return _api_result(requests.get(f"{api}/is-parametric/{self.id}"))
+
     def depends(self):
         """
         The routines that directly conceptually depend on this routine.
@@ -66,28 +74,38 @@ class Routine:
         return [Routine(id) for id in
                 _api_result(requests.get(f"{api}/find?count={max_count}&depends_on={self.id}"))]
 
-    def eval(self, inp):
+    def eval(self, inp, **kwargs):
         """
         Evaluates the routine with the given input.
 
         :param inp: INPUT
+        :param kwars: routine parameters (for parametric routines)
         :returns: OUTPUT
         :raises ValueError: if input was invalid
         :raises APIError: if some other API error occurred
         """
-        out = _api_result(requests.post(f"{api}/eval/{self.id}", json=inp))
+        out = _api_result(requests.post(f"{api}/eval/{self.id}", json=inp, params=kwargs))
         if out is None:
             raise ValueError
         return out
 
     def examples(self):
         """
-        Gets examples associated with the routine.
+        Gets examples associated with the nonparametric routine.
 
         :returns: list of INPUTs
         :raises APIError: if some other API error occurred
         """
         return _api_result(requests.get(f"{api}/examples/{self.id}"))
+
+    def example_params(self):
+        """
+        Gets example parameters associated with the parametric routine.
+
+        :returns: list of dictionaries, each representing a valid set of parameters
+        :raises APIError: if some other API error occurred
+        """
+        return _api_result(requests.get(f"{api}/example-params/{self.id}"))
 
     def gen(self, **kwargs):
         """

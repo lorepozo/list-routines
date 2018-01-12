@@ -18,9 +18,9 @@ see the [Project Homepage](https://lucasem.github.io/list-routines/).
 1. Install [`racket`](http://racket-lang.org). It should be usable from the
    shell as `racket`.
 2. Install rust via [rustup.rs](https://rustup.rs).
-3. Set the toolchain to `nightly`:
+3. Set the toolchain to `nightly-2017-12-20`:
    ```sh
-   $ rustup default nightly
+   $ rustup default nightly-2017-12-20
    ```
 
 ## Run

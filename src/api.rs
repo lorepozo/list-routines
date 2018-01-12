@@ -179,8 +179,8 @@ fn description(mgr: State<Manager>, id: String) -> JsonResponse {
         .unwrap_or_else(|e| e)
 }
 
-/// The `/is-parametric/<id>` endpoint, via GET, returns text of the
-/// documentation for the given routine.
+/// The `/is-parametric/<id>` endpoint, via GET, returns a boolean of whether
+/// the given routine is parametric.
 #[get("/is-parametric/<id>")]
 fn is_parametric(mgr: State<Manager>, id: String) -> JsonResponse {
     mgr.open_routine(id)
