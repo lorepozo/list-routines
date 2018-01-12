@@ -19,10 +19,11 @@ experimental** and subject to significant frequent change.
 
 **Why a web server?** This dataset can randomly generate new valid inputs
 and outputs for a routine, as well as provide polymorphic routines with
-given parameters. If this dataset were stored statically like most datasets,
-this wouldn't be possible. For other means of interacting with this dataset,
-such as with a local program using standard I/O or by exporting static
-examples, see the page on [hosting](hosting).
+given parameters, all while being language-agnostic. If this dataset were
+stored statically like most datasets, this wouldn't be possible. For other
+means of interacting with this dataset, such as with a local program using
+standard I/O or by exporting static examples, see the page on
+[hosting](hosting).
 
 # Tasks
 
@@ -144,7 +145,7 @@ routines = lr.find(count=3)
 # open a routine using its id.
 evens = lr.Routine("evens")
 
-# EXAMPLES returns list of inputs.
+# EXAMPLES returns list of inputs. (only for nonparametric routines.)
 evens.examples()
 # -> [[2, 0, 4], [2, 5, 4, 2, 0, 5, 1, 1]]
 
@@ -173,6 +174,21 @@ count_head_in_tail = lr.Routine("count-head-in-tail")
 # Conceptual reverse-dependence with .depends()
 [routine.id for routine in evens.depends()]
 # -> ['keep-mod-head', 'remove-mod-head']
+
+
+## parametric routines:
+addk = lr.Routine("add-k")
+
+# EXAMPLE_PARAMS returns a list of valid parameters.
+addk.example_params()
+# -> [{'k': 2}, {'k': 3}, {'k': 5}]
+
+# EVAL evaluates the routine on given input, using kwargs.
+addk.eval([5, 2, 0], k=2)
+# -> [7, 4, 2]
+params = {"k": 5}
+addk.eval([5, 2, 0], **params)
+# -> [10, 7, 5]
 ```
 
 Advanced users can set the `listroutines.api` variable to the api url
@@ -195,13 +211,6 @@ further questions.
 
 # Not yet implemented
 
-The following features will be implemented soon:
-- Parameterized routines: routines that are specified by parameters.
-  For example, `add-k` could require a parameter such as `k=2` which would
-  add the number `k` to each element in a list. There are ways to make this
-  easy to use and reason about, programmatically.
-- Properties of routines: simple tags to associate with routines.
-- Complex find queries: use the partial ordering and properties to constrain
-  search for routines. For example: _which routines depend on `head`?_; or
-  _what routines does `count-head-in-tail` depend on?_; or _what routines
-  depend on `head` and return a boolean_?
+The following feature will be implemented soon:
+- Properties of routines: simple tags to associate with routines, and ways
+  of constraining find queries with them.
