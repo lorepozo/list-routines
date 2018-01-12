@@ -17,6 +17,13 @@ ROUTINE: INPUT => OUTPUT
 This dataset is in the form of a web server. It is currently **highly
 experimental** and subject to significant frequent change.
 
+**Why a web server?** This dataset can randomly generate new valid inputs
+and outputs for a routine, as well as provide polymorphic routines with
+given parameters. If this dataset were stored statically like most datasets,
+this wouldn't be possible. Other means of interacting with this dataset,
+such as with a local program using standard I/O or by exporting static
+examples, see the page on [hosting](hosting).
+
 # Tasks
 
 Here are a few machine learning tasks that this dataset aims to provide:
@@ -66,13 +73,29 @@ $ api="http://localhost:8000"
   $ curl "$api/description/len"
   {"result": "gets the length of the list."}
   ```
-- **EXAMPLES** (GET) `/examples/<id>` returns a list of `INPUT`s for the
-  given routine. These inputs should be representative of the routine's
-  function.
+- **IS-PARAMETRIC** (GET) `/is-parametric/<id>` returns a boolean of whether
+  the given routine is parametric.
+
+  ```bash
+  $ curl "$api/is-parametric/add-k"
+  {"result": true}
+  ```
+- **EXAMPLES** _nonparametric only_ (GET) `/examples/<id>` returns a list of
+  `INPUT`s for the given routine. These inputs should be representative of
+  the routine's function.
 
   ```bash
   $ curl "$api/examples/len"
   {"result": [[1,2,3],[0],[1,1,2,1]]}
+  ```
+- **EXAMPLE-PARAMS** _parametric only_ (GET) `/examples/<id>` returns a list
+  of key-value mappings of parameters and their assignments for the given
+  parametric routine. These parameters should provide representative
+  functions for the routine's concept.
+
+  ```bash
+  $ curl "$api/example-params/add-k"
+  {"result": [{"k":2}, {"k":3}, {"k":10}]}
   ```
 - **GENERATE** (GET) `/gen/<id>` returns a list of `INPUT`s for the routine
   that have been randomly generated. It takes optional parameters as query
@@ -84,12 +107,16 @@ $ api="http://localhost:8000"
   {"result":[[2,13,9],[1,7,7],[1,4,14]]}
   ```
 - **EVALUATE** (POST) `/eval/<id>` takes in JSON data representing input for
-  the routine, and returns an `OUTPUT`. Invalid input for the routine
+  the routine, and returns an `OUTPUT`. For parametric routines, parameters
+  are given as query arguments. Invalid input or parameters for the routine
   results in a bad request error (HTTP 400).
 
   ```bash
   $ curl -XPOST "$api/eval/len" --data "[5, 1, 2, 0]"
   {"result":4}
+
+  $ curl -XPOST "$api/eval/add-k?k=4" --data "[5, 1, 2, 0]"
+  {"result":[9, 5, 6, 4]}
   ```
 
 # Python API
