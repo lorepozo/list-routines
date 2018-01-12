@@ -8,9 +8,9 @@
 1. _[setup]_: Install [`racket`](https://racket-lang.org). It should be
    usable from the shell as `racket`.
 2. _[setup]_: Install rust via [rustup.rs](https://rustup.rs).
-3. _[setup]_: Set the toolchain to `nightly`:
+3. _[setup]_: Set the toolchain to `nightly-2017-12-20`:
    ```sh
-   $ rustup default nightly
+   $ rustup default nightly-2017-12-20
    ```
 4. _[setup]_: Clone the repository
    [lucasem/list-routines](https://github.com/lucasem/list-routines)

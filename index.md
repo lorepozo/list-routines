@@ -20,7 +20,7 @@ experimental** and subject to significant frequent change.
 **Why a web server?** This dataset can randomly generate new valid inputs
 and outputs for a routine, as well as provide polymorphic routines with
 given parameters. If this dataset were stored statically like most datasets,
-this wouldn't be possible. Other means of interacting with this dataset,
+this wouldn't be possible. For other means of interacting with this dataset,
 such as with a local program using standard I/O or by exporting static
 examples, see the page on [hosting](hosting).
 
