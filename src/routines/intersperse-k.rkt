@@ -4,21 +4,24 @@
 (require "../prelude.rkt")
 
 (define is-parametric #t)
-(define description "prepends the number `k`.")
+(define description "inserts `k` between each element of the list.")
 (define deps '())
 
 (define example-params
-  '(#hash((k . 2))
-    #hash((k . 3))
+  '(#hash((k . 1))
+    #hash((k . 10))
     #hash((k . -2))
-    #hash((k . 10))))
+    #hash((k . 0))))
 
 (define (validate-params params)
   (not (null? (hash-ref-integer params 'k 'null))))
-(define (validate l params) (and (list? l) (andmap integer? l)))
+(define (validate l params)
+  (and (list? l) (andmap integer? l)))
 (define (evaluate l params)
-  (let ([k (hash-ref-integer params 'k 'null)]) ; never null b/c validate-params
-    (cons k l)))
+  (if (empty? l)
+      '()
+      (let ([k (hash-ref-integer params 'k 'null)])
+        (rest (append-map (λ (e) (list k e)) l)))))
 
 (define generate (generate-many
   (λ (params)

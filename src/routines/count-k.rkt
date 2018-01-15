@@ -4,7 +4,7 @@
 (require "../prelude.rkt")
 
 (define is-parametric #t)
-(define description "counters occurrences of the number `k`.")
+(define description "counts occurrences of the number `k`.")
 (define deps '())
 
 (define example-params

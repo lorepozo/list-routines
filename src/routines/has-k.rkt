@@ -4,13 +4,12 @@
 (require "../prelude.rkt")
 
 (define is-parametric #t)
-(define description "prepends the number `k`.")
+(define description "checks if the number `k` occurs in the list.")
 (define deps '())
 
 (define example-params
   '(#hash((k . 2))
     #hash((k . 3))
-    #hash((k . -2))
     #hash((k . 10))))
 
 (define (validate-params params)
@@ -18,7 +17,7 @@
 (define (validate l params) (and (list? l) (andmap integer? l)))
 (define (evaluate l params)
   (let ([k (hash-ref-integer params 'k 'null)]) ; never null b/c validate-params
-    (cons k l)))
+    (not (not (member k l)))))
 
 (define generate (generate-many
   (λ (params)

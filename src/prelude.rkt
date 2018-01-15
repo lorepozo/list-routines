@@ -12,12 +12,15 @@
 
 (define (nonnegative? x) (>= x 0))
 
-(define (generate-many generate-one)
+(define (generate-many generate-one
+                       #:validator [valid? (λ (p) #t)])
   (λ (params)
-     (let lp ([count (hash-ref-integer params 'count 1)])
-       (if (> count 0)
-           (cons (generate-one params) (lp (- count 1)))
-           null))))
+     (if (not (valid? params))
+         'null
+         (let lp ([count (hash-ref-integer params 'count 1)])
+           (if (> count 0)
+               (cons (generate-one params) (lp (- count 1)))
+               null)))))
 
 (define (random-list
           #:len [len (inexact->exact

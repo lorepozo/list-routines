@@ -1,6 +1,16 @@
-add-k append-k count-head-in-tail count-k dedup dup evens head-in-tail head index-head keep-mod-head len mult-k odds prepend-k remove-mod-head tail uniq
-3: 9 17 4
-8: 9 17
-10: 9 17
-11: 9 17 7 14
-16: 9 17 7 14
+add-k append-k caesar-cipher-k-modulo-n count-head-in-tail count-k dedup drop-k dup evens has-head-in-tail has-k head index-head index-k intersperse-k is-evens is-mod-k is-odds is-primes is-squares keep-mod-head keep-mod-k kth-largest kth-smallest last len max min modulo-k mult-k odds pop prepend-k product remove-index-k remove-mod-head remove-mod-k replace-all-k-with-n replace-all-with-index-k replace-index-k-with-n reverse rotate-k slice-k-n sort sum tail take-k uniq
+3: 29 1
+4: 12 46 5
+10: 12 46 11
+13: 12 46 14
+14: 12
+17: 9 31
+21: 12 46 22
+22: 9 31
+23: 27
+24: 28
+35: 14
+36: 12 46 37
+37: 9 31
+40: 14
+43: 14 47

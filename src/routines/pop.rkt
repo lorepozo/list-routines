@@ -4,13 +4,13 @@
 (require "../prelude.rkt")
 
 (define is-parametric #f)
-(define description "gets the first element of the list.")
+(define description "removes the last element of the list.")
 (define deps '())
 
 (define examples '((1 2 3) (0) (1 1 2 1)))
 
 (define (validate l) (and (list? l) (andmap integer? l) (not (empty? l))))
-(define (evaluate l) (first l))
+(define (evaluate l) (reverse (rest (reverse l))))
 
 (define generate (generate-many
   (λ (params)

@@ -4,24 +4,25 @@
 (require "../prelude.rkt")
 
 (define is-parametric #t)
-(define description "prepends the number `k`.")
-(define deps '())
+(define description "gets elements which are not divisible by `k`.")
+(define deps '("evens" "odds"))
 
 (define example-params
   '(#hash((k . 2))
     #hash((k . 3))
-    #hash((k . -2))
-    #hash((k . 10))))
+    #hash((k . 5))))
 
 (define (validate-params params)
   (not (null? (hash-ref-integer params 'k 'null))))
 (define (validate l params) (and (list? l) (andmap integer? l)))
 (define (evaluate l params)
   (let ([k (hash-ref-integer params 'k 'null)]) ; never null b/c validate-params
-    (cons k l)))
+    (filter (λ (x) (not (= (modulo x k) 0)))
+            l)))
 
 (define generate (generate-many
   (λ (params)
-     (let ([len (hash-ref-integer params 'len (random 8)
-                                  #:validator nonnegative?)])
-       (random-list #:len len)))))
+     (let ([len (hash-ref-integer params 'len (random 1 8)
+                                 #:validator positive?)])
+       (append (list (random 1 8))
+               (random-list #:len (sub1 len)))))))

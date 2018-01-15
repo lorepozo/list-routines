@@ -5,7 +5,7 @@
 
 (define is-parametric #f)
 (define description "gets elements after the first number which are not divisible by the first number.")
-(define deps '("head" "tail" "evens" "odds"))
+(define deps '("head" "tail" "remove-mod-k"))
 
 (define examples '((3 1 3 4 7 6 9 2) (4 2 6 10 8 12) (1 2 3)))
 
@@ -19,4 +19,4 @@
      (let ([len (hash-ref-integer params 'len (random 1 8)
                                   #:validator positive?)])
        (append (list (random 1 8))
-               (random-list #:len (- len 1)))))))
+               (random-list #:len (sub1 len)))))))

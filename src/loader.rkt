@@ -28,7 +28,9 @@
     [("is-parametric") #f]
     [("validate") (evaluator `(validate ',inp))]
     [("evaluate") (evaluator `(let ([inp ',inp])
-                                (if (validate inp) (evaluate inp) 'null)))]
+                                (if (validate inp)
+                                    (evaluate inp)
+                                    'null)))]
     [("examples") (evaluator 'examples)]
     [("generate") (evaluator `(generate ,params))]
     [("description") (evaluator 'description)]
@@ -42,18 +44,17 @@
                                 (and (validate-params params)
                                      (validate inp params))))]
     [("evaluate") (evaluator `(let ([inp ',inp] [params ,params])
-                                (or
-                                  (and (validate-params params)
-                                       (validate inp params)
-                                       (evaluate inp params))
-                                  'null)))]
+                                (if (and (validate-params params)
+                                         (validate inp params))
+                                    (evaluate inp params)
+                                    'null)))]
     [("example-params") (evaluator 'example-params)]
     [("generate") (evaluator `(generate ,params))]
     [("description") (evaluator 'description)]
     [else 'null]))
 
 (define (interpret-line line callback)
-  (with-handlers ([exn:fail? (lambda (exn) (display exn (current-error-port)))])
+  (with-handlers ([exn:fail? (λ (exn) (display exn (current-error-port)))])
     (let* ([js          (bytes->jsexpr line)]
            [op          (hash-ref js 'op "evaluate")]
            [routine     (hash-ref js 'routine)]

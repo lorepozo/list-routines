@@ -62,6 +62,7 @@ fn routines() {
     let path = format!("/find?count={}", FIND_COUNT);
     let routines: Vec<String> = json_get(&client, &path);
     for routine in routines.into_iter() {
+        // if !routine.starts_with("rot") {continue}
         let path = format!("/is-parametric/{}", &routine);
         let is_parametric: bool = json_get(&client, &path);
 

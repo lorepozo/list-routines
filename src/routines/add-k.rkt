@@ -10,6 +10,7 @@
 (define example-params
   '(#hash((k . 2))
     #hash((k . 3))
+    #hash((k . -2))
     #hash((k . 10))))
 
 (define (validate-params params)
