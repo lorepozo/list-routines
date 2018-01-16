@@ -1,6 +1,7 @@
 #lang racket
 (provide hash-ref-integer nonnegative?)
 (provide generate-many random-list)
+(provide flip)
 
 (require math/distributions)
 
@@ -32,3 +33,6 @@
         (cons (random min max)
               (lp (- len 1)))
         null)))
+
+(define (flip)
+  (> (random) 0.5))
