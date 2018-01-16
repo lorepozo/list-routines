@@ -13,6 +13,8 @@ Examples:
 
 @conceptual-dependencies
 @in[d deps]{
-- [@d](#@d)
+- [@d](#@if[(routine-is-parametric d)
+            (string-append d "-parametric")
+            d])
 
 }

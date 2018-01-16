@@ -34,9 +34,12 @@
                      (map list examples (map evaluate examples)))))
         (make-base-namespace)))
 
-(define (routine-docs) ; list of (name is-parametric description deps example-IO-pairs/example-params)
+(define routine-docs ; list of (name is-parametric description deps example-IO-pairs/example-params)
   (map (λ (r) (cons (name r) (info r)))
        routines))
+
+(define (routine-is-parametric routine)
+  (first (assoc routine routine-docs)))
 
 (define (routine-template r)
   (let* ([routine       (first r)]
@@ -57,6 +60,6 @@
 (define (main-template content)
   (include-template "docs_template_main.md"))
 
-(display (main-template (string-join (map routine-template (routine-docs)) "\n"))
+(display (main-template (string-join (map routine-template routine-docs) "\n"))
          (open-output-file "routines.md" #:exists 'replace))
 (display "output written to routines.md\n")
