@@ -34,5 +34,5 @@
               (lp (- len 1)))
         null)))
 
-(define (flip)
-  (> (random) 0.5))
+(define (flip #:p [p 0.5])
+  (< (random) p))

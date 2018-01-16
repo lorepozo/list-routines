@@ -18,6 +18,8 @@
 
 (define generate (generate-many
   (λ (params)
-     (let ([len (hash-ref-integer params 'len (random 8)
-                                  #:validator nonnegative?)])
-       (random-list #:len len)))))
+     (let* ([len (hash-ref-integer params 'len (random 8)
+                                   #:validator nonnegative?)])
+       (if (flip)
+           (take (shuffle primes) len)
+           (random-list #:len len))))))
