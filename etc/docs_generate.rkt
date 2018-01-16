@@ -14,8 +14,8 @@
   (map path->string
        (directory-list "src/routines")))
 
-(define (name routine)
-  (substring routine 0 (- (string-length routine) 4)))
+(define (name routine-file)
+  (substring routine-file 0 (- (string-length routine-file) 4)))
 
 (define (info routine)
   (eval `(begin
@@ -26,7 +26,7 @@
                           example-params
                           (map (λ (params)
                                   (let ([inps
-                                          (generate (hash-union params #hash((count .  3))))])
+                                          (generate (hash-set params 'count 3))])
                                     (map list inps (map (λ (inp)
                                                            (evaluate inp params))
                                                         inps))))
