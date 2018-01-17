@@ -5,7 +5,7 @@ one of a number, list of numbers, or list of lists of numbers, and the
 output is either a Boolean, number, or list of numbers.
 
 ```
-INPUT:   Num | List<Num> | List<List<Num>>
+INPUT:   Num | List<Num>
 OUTPUT:  Bool | Num | List<Num>
 ROUTINE: INPUT => OUTPUT
 ```
@@ -56,7 +56,7 @@ parametric. See existing routine implementations for examples.
 After routines are added, create the `routines.graph` file:
 
 ```sh
-$ racket etc/graph_generate.rkt
+$ racket etc/generate_graph.rkt
 output written to routines.graph
 ```
 
