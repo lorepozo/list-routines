@@ -41,7 +41,7 @@ describes the format of the input and output JSON.
    usable from the shell as `racket`.
 2. _[setup]_: Clone the repository
    [lucasem/list-routines](https://github.com/lucasem/list-routines)
-3. _[run]_: Execute `racket -o output.json etc/static_generate.rkt` to save
+3. _[run]_: Execute `racket -o output.json etc/generate_static.rkt` to save
    exported routines to `output.json`.
 
 The output JSON is a list of exported routines of the following form:
@@ -65,52 +65,13 @@ The output JSON is a list of exported routines of the following form:
       { "i": [ 11, 5 ], "o": [ 24, 18 ] },
       { "i": [ 8, 5 ], "o": [ 21, 18 ] }
     ]
-  },
-  {
-    "name": "drop-k with k=2",
-    "is_parametric": true,
-    "description": "drops the first `k` numbers of the list.",
-    "dependencies": [],
-    "test": [
-      { "i": [ 7, 15, 10, 16, 0, 7 ], "o": [ 10, 16, 0, 7 ] },
-      { "i": [ 4, 5 ], "o": [] },
-      { "i": [ 13, 8, 2, 15, 10, 14, 8, 5 ], "o": [ 2, 15, 10, 14, 8, 5 ] },
-      { "i": [ 5, 7, 3, 6, 16 ], "o": [ 3, 6, 16 ] },
-      { "i": [ 10, 12, 0 ], "o": [ 0 ] }
-    ],
-    "train": [
-      { "i": [ 0, 14, 12, 11, 3, 0, 10 ], "o": [ 12, 11, 3, 0, 10 ] },
-      { "i": [ 2, 11, 11, 8, 1, 7, 2 ], "o": [ 11, 8, 1, 7, 2 ] },
-      { "i": [ 0, 6, 10, 15, 2, 1, 0 ], "o": [ 10, 15, 2, 1, 0 ] },
-      { "i": [ 12, 9, 9, 11 ], "o": [ 9, 11 ] },
-      { "i": [ 8, 9 ], "o": [] }
-    ]
-  },
-  {
-    "name": "has-head-in-tail",
-    "is_parametric": false,
-    "test": [
-      { "i": [ 12, 12, 13, 5 ], "o": true },
-      { "i": [ 4, 11, 14 ], "o": false },
-      { "i": [ 11, 11 ], "o": true },
-      { "i": [ 0, 11, 0, 4, 8, 0 ], "o": true },
-      { "i": [ 11, 0, 8, 16, 15, 15, 4, 11 ], "o": true },
-      { "i": [ 16 ], "o": false },
-      { "i": [ 12, 10, 0, 0 ], "o": false },
-      { "i": [ 2, 2 ], "o": true },
-      { "i": [ 6, 6, 7, 10, 11 ], "o": true },
-      { "i": [ 6, 3, 14, 2 ], "o": false }
-    ],
-    "description": "checks if the first number occurs in the rest of the list.",
-    "dependencies": [ "head", "tail", "has-k" ],
-    "train": [
-      { "i": [ 1, 1, 2 ], "o": true },
-      { "i": [ 1, 2, 3 ], "o": false },
-      { "i": [ 2, 1, 2 ], "o": true },
-      { "i": [ 2, 3, 4 ], "o": false },
-      { "i": [ 3, 1, 3, 4, 2 ], "o": true },
-      { "i": [ 4, 2, 6, 10, 8, 12 ], "o": false }
-    ]
   }
-]
+```
+
+The output of the racket script isn't so pretty. To make it pretty (like
+shown above), use the provided vim script:
+```sh
+vim -s etc/clean_static.vim output.json
+# if using neovim, pass --headless to make things faster
+nvim --headless -s etc/clean_static.vim output.json
 ```
