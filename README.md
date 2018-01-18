@@ -1,8 +1,8 @@
 # list-routines
 
-This is a dataset for program learning. The routines in this dataset take in
-one of a number, list of numbers, or list of lists of numbers, and the
-output is either a Boolean, number, or list of numbers.
+This is an interactive dataset for program learning. The routines in this
+dataset take as input a number or a list of numbers, and the output is
+either a Boolean, number, or list of numbers.
 
 ```
 INPUT:   Num | List<Num>

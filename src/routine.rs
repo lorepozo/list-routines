@@ -444,11 +444,8 @@ struct Racket {
     stdin: ChildStdin,
     stdout: BufReader<ChildStdout>,
 }
-impl Worker for Racket {
-    type Input = serde_json::Value;
-    type Output = Result<String, Error>;
-
-    fn new() -> Self {
+impl Default for Racket {
+    fn default() -> Self {
         let child = Command::new("racket")
             .arg("src/loader.rkt")
             .stdin(Stdio::piped())
@@ -462,6 +459,10 @@ impl Worker for Racket {
         let stdout = BufReader::new(stdout);
         Racket { stdin, stdout }
     }
+}
+impl Worker for Racket {
+    type Input = serde_json::Value;
+    type Output = Result<String, Error>;
 
     /// Communication with racket is done via lines of back-and-forth JSON. This
     /// function serializes a given JSON operation and send it along, returning
