@@ -20,8 +20,8 @@
          (>= (length l) k))))
 (define (evaluate l params)
   (let ([k (hash-ref-integer params 'k 'null)])
-    (append (take l (sub1 k))
-            (drop l k))))
+    (let-values ([(front back) (split-at l (sub1 k))])
+      (append front (cdr back)))))
 
 (define generate (generate-many
   (λ (params)

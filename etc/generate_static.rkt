@@ -58,7 +58,9 @@
                                 (- (string-length routine-file) 4))]
                [h    (info routine-file)])
            (cons name h)))
-       (map path->string (directory-list "src/routines"))))
+       (filter
+         (λ (path) (string-suffix? path ".rkt"))
+         (map path->string (directory-list "src/routines")))))
 
 (define (routine-data-parametric r)
   (let* ([h (cdr r)]

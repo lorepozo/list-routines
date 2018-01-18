@@ -13,7 +13,8 @@
     #hash((k . 5))))
 
 (define (validate-params params)
-  (not (null? (hash-ref-integer params 'k 'null))))
+  (let ([k (hash-ref-integer params 'k 'null)])
+    (and (not (null? k)) (not (= 0 k)))))
 (define (validate l params) (and (list? l) (andmap integer? l)))
 (define (evaluate l params)
   (let ([k (hash-ref-integer params 'k 'null)]) ; never null b/c validate-params

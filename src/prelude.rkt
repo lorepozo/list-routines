@@ -1,6 +1,9 @@
 #lang racket
 (provide hash-ref-integer nonnegative?)
-(provide generate-many random-list)
+(provide generate-many)
+(provide random-list
+         random-list-with-exact-occurrence
+         random-list-with-exact-occurrence-where)
 (provide flip)
 
 (require math/distributions)
@@ -33,6 +36,35 @@
         (cons (random min max)
               (lp (- len 1)))
         null)))
+
+(define (random-list-with-exact-occurrence
+          k
+          #:len [len (inexact->exact
+                       (floor (* 3 ((distribution-sample (gamma-dist))))))]
+          #:cnt [cnt (if (= 0 len) 0 (add1 (random len)))] ; defaults to at least one
+          #:min [min 0]
+          #:max [max 17])
+  (random-list-with-exact-occurrence-where
+    (λ (x) (= x k))
+    (λ () k)
+    #:len len #:cnt cnt #:min min #:max max))
+
+(define (random-list-with-exact-occurrence-where
+          where update
+          #:len [len (inexact->exact
+                       (floor (* 3 ((distribution-sample (gamma-dist))))))]
+          #:cnt [cnt (if (= 0 len) 0 (add1 (random len)))] ; defaults to at least one
+          #:min [min 0]
+          #:max [max 17])
+  (if (or (< cnt 0) (> cnt len))
+      (raise "invalid count")
+      (let lp ([l (random-list #:len len)])
+        (let ([current-cnt (count where l)])
+          (cond [(= current-cnt cnt) l]
+                [(< current-cnt cnt)
+                 (lp (list-set l (random len) (update)))]
+                [else
+                 (lp (list-set l (index-where l where) (random min max)))])))))
 
 (define (flip #:p [p 0.5])
   (< (random) p))

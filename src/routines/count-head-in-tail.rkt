@@ -16,9 +16,7 @@
   (λ (params)
      (let* ([len (hash-ref-integer params 'len (random 1 8)
                                    #:validator positive?)]
-            [l (random-list #:len len)]
-            [k (car l)])
-       (if (flip)
-           (let ([idx (random len)])
-             (append (list k) (take (cdr l) idx) (list k) (drop (cdr l) idx)))
-           l)))))
+            [k (random 17)])
+       (if (and (> len 1) (flip))
+           (cons k (random-list-with-exact-occurrence k #:len (sub1 len)))
+           (cons k (random-list #:len (sub1 len))))))))

@@ -16,7 +16,9 @@
     (map (λ (r)
             (set! numbering (+ numbering 1))
             (list (name r) numbering (dependencies r)))
-         (map path->string (directory-list "src/routines")))))
+         (filter
+           (λ (path) (string-suffix? path ".rkt"))
+           (map path->string (directory-list "src/routines"))))))
 
 (define (routine-number routine)
   (second (assoc routine routines)))

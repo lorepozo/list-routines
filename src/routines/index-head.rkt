@@ -17,7 +17,7 @@
 
 (define generate (generate-many
   (λ (params)
-     (let ([len (hash-ref-integer params 'len (random 2 8)
-                                  #:validator (λ (n) (> n 1) ))])
-       (append (list (random 1 len))
-               (random-list #:len (sub1 len)))))))
+     (let* ([len (hash-ref-integer params 'len (random 2 8)
+                                   #:validator (λ (n) (> n 1) ))]
+            [idx (random 1 len)])
+       (cons idx (random-list #:len (sub1 len)))))))

@@ -32,7 +32,6 @@
                                    #:validator nonnegative?)]
             [l (random-list #:len len)])
        (if (flip)
-           (let ([idx (random (add1 len))])
-             (append (take l idx) (list k) (drop l idx)))
-           l)))
+           (random-list-with-exact-occurrence k #:len len)
+           (random-list #:len len))))
   #:validator validate-params))

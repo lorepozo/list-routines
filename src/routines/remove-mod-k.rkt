@@ -24,12 +24,11 @@
   (λ (params)
      (let* ([k (hash-ref-integer params 'k 'null)]
             [len (hash-ref-integer params 'len (random 8)
-                                   #:validator nonnegative?)]
-            [l (random-list #:len len)])
-       (if (flip)
-           (let ([idx (random (add1 len))])
-             (append (take l idx)
-                     (list (* k (random 10)))
-                     (drop l idx)))
-           l)))
+                                   #:validator nonnegative?)])
+       (if (and (flip) (> k 1))
+           (random-list-with-exact-occurrence-where
+             (λ (x) (= (modulo x k) 0))
+             (λ () (* k (random 10)))
+             #:len len)
+           (random-list #:len len))))
   #:validator validate-params))

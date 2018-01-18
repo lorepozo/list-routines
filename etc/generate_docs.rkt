@@ -11,8 +11,9 @@
     ", "))
 
 (define routines
-  (map path->string
-       (directory-list "src/routines")))
+  (filter
+    (λ (path) (string-suffix? path ".rkt"))
+    (map path->string (directory-list "src/routines"))))
 
 (define (name routine-file)
   (substring routine-file 0 (- (string-length routine-file) 4)))
