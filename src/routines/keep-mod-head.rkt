@@ -16,7 +16,14 @@
 
 (define generate (generate-many
   (λ (params)
-     (let ([len (hash-ref-integer params 'len (random 1 8)
-                                 #:validator positive?)])
-       (append (list (random 1 8))
-               (random-list #:len (sub1 len)))))))
+     (let* ([len (hash-ref-integer params 'len (random 1 8)
+                                   #:validator positive?)]
+            [l (random-list #:len len)]
+            [k (car l)])
+       (if (flip)
+           (let ([idx (random len)])
+             (append (list k)
+                     (take (cdr l) idx)
+                     (list (* k (random 10)))
+                     (drop (cdr l) idx)))
+           l)))))

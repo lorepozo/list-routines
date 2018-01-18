@@ -19,6 +19,6 @@
             [l (random-list #:len len)]
             [k (car l)])
        (if (flip)
-           (let ([idx (random 0 len)])
+           (let ([idx (random len)])
              (append (list k) (take (cdr l) idx) (list k) (drop (cdr l) idx)))
            l)))))
