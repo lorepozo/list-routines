@@ -3,7 +3,7 @@
 `@routine` @description
 
 Examples:
-@in[e example-params]{
+@in[e examples]{
 - @(first e)
   @in[ex (second e)]{
     - @(first ex) => @(second ex)

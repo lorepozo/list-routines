@@ -10,53 +10,61 @@
                        (string-append (symbol->string k) "=" (jsexpr->string v)))) #t)
     ", "))
 
-(define routines
-  (filter
-    (λ (path) (string-suffix? path ".rkt"))
-    (map path->string (directory-list "src/routines"))))
-
-(define (name routine-file)
-  (substring routine-file 0 (- (string-length routine-file) 4)))
-
-(define (info routine)
+(define (info routine-file)
   (eval `(begin
-           (require racket/hash ,(string-append "src/routines/" routine))
-           (list is-parametric description deps
-                 (if is-parametric
-                     (map list
-                          example-params
-                          (map (λ (params)
-                                  (let ([inps
-                                          (generate (hash-set params 'count 3))])
-                                    (map list inps (map (λ (inp)
-                                                           (evaluate inp params))
-                                                        inps))))
-                               example-params))
-                     (map list examples (map evaluate examples)))))
+           (require ,(string-append "src/routines/" routine-file))
+           (define h (make-hash))
+           (hash-set! h 'description description)
+           (hash-set! h 'is-parametric is-parametric)
+           (hash-set! h 'deps deps)
+           (hash-set! h 'evaluate evaluate)
+           (hash-set! h 'generate generate)
+           (if is-parametric
+               (hash-set! h 'example-params example-params)
+               (hash-set! h 'examples examples))
+           h)
         (make-base-namespace)))
 
-(define routine-docs ; list of (name is-parametric description deps example-IO-pairs/example-params)
-  (map (λ (r) (cons (name r) (info r)))
-       routines))
+(define routine-docs ; alist of name → hash table
+  (map (λ (routine-file)
+         (let ([name (substring routine-file 0
+                                (- (string-length routine-file) 4))]
+               [h    (info routine-file)])
+           (cons name h)))
+       (filter
+         (λ (path) (string-suffix? path ".rkt"))
+         (map path->string (directory-list "src/routines")))))
+
 
 (define (routine-is-parametric routine)
-  (first (assoc routine routine-docs)))
+  (hash-ref (cdr (assoc routine routine-docs)) 'is-parametric))
 
 (define (routine-template r)
-  (let* ([routine       (first r)]
-         [is-parametric (second r)]
-         [description   (third r)]
-         [deps          (fourth r)]
+  (let* ([routine       (car r)]
+         [h             (cdr r)]
+         [is-parametric (hash-ref h 'is-parametric)]
+         [description   (hash-ref h 'description)]
+         [deps          (hash-ref h 'deps)]
+         [generate      (hash-ref h 'generate)]
+         [evaluate      (hash-ref h 'evaluate)]
          [conceptual-dependencies
            (if (empty? deps) "" "Conceptual dependencies:")])
-    (if is-parametric
-        (let ([example-params (map (λ (e)
-                                      (list (pretty-params (first e))
-                                            (map (λ (ex) (map jsexpr->string ex)) (second e))))
-                                   (fifth r))])
-          (include-template "docs_template_routine_parametric.md"))
-        (let ([examples (map (λ (ex) (map jsexpr->string ex)) (fifth r))])
-          (include-template "docs_template_routine_nonparametric.md")))))
+  (if is-parametric
+    (let* ([example-params (hash-ref h 'example-params)]
+           [examples (map list
+                          (map pretty-params example-params)
+                          (map (λ (params)
+                                  (let* ([inps (generate (hash-set params 'count 3))]
+                                         [outs (map (λ (inp) (evaluate inp params)) inps)]
+                                         [inps (map jsexpr->string inps)]
+                                         [outs (map jsexpr->string outs)])
+                                    (map list inps outs)))
+                               example-params))])
+      (include-template "docs_template_routine_parametric.md"))
+    (let* ([examples (hash-ref h 'examples)]
+           [examples (map (λ (ex) (map jsexpr->string ex))
+                          (map list examples (map evaluate examples)))])
+      (include-template "docs_template_routine_nonparametric.md")))))
 
 (define (main-template content)
   (include-template "docs_template_main.md"))

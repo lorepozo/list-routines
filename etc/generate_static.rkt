@@ -39,7 +39,7 @@
 
 (define (info routine-file)
   (eval `(begin
-           (require racket/hash ,(string-append "src/routines/" routine-file))
+           (require ,(string-append "src/routines/" routine-file))
            (define h (make-hash))
            (hash-set! h 'description description)
            (hash-set! h 'is-parametric is-parametric)
@@ -52,7 +52,7 @@
            h)
         (make-base-namespace)))
 
-(define routines ; returns alist of name → hash table
+(define routines ; alist of name → hash table
   (map (λ (routine-file)
          (let ([name (substring routine-file 0
                                 (- (string-length routine-file) 4))]
