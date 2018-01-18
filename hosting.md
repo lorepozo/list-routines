@@ -16,9 +16,9 @@
    ```
 3. _[web server]_: Install rust via [rustup.rs](https://rustup.rs).
 4. _[web server]_: Set the project's rust toolchain to
-   `nightly-2017-12-20`:
+   `nightly`:
    ```sh
-   $ rustup override set nightly-2017-12-20
+   $ rustup override set nightly
    ```
 
 ## Web Server
