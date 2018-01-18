@@ -3,19 +3,29 @@
 * TOC
 {:toc}
 
+## Setup
+
+1. Install [racket](https://racket-lang.org). It should be usable from the
+   shell as `racket`.
+2. Clone the repository
+   [lucasem/list-routines](https://github.com/lucasem/list-routines) and
+   change into its directory:
+   ```sh
+   $ git clone https://github.com/lucasem/list-routines
+   $ cd list-routines
+   ```
+3. _[web server]_: Install rust via [rustup.rs](https://rustup.rs).
+4. _[web server]_: Set the project's rust toolchain to
+   `nightly-2017-12-20`:
+   ```sh
+   $ rustup override set nightly-2017-12-20
+   ```
+
 ## Web Server
 
-1. _[setup]_: Install [`racket`](https://racket-lang.org). It should be
-   usable from the shell as `racket`.
-2. _[setup]_: Install rust via [rustup.rs](https://rustup.rs).
-3. _[setup]_: Set the toolchain to `nightly-2017-12-20`:
-   ```sh
-   $ rustup default nightly-2017-12-20
-   ```
-4. _[setup]_: Clone the repository
-   [lucasem/list-routines](https://github.com/lucasem/list-routines)
-5. _[run]_: From the root directory of the source code repository, execute
-   `cargo run --release`
+```sh
+$ cargo run --release
+```
 
 Detailed usage for the web server can be found at the [root of this
 website](/).
@@ -23,11 +33,9 @@ website](/).
 
 ## Local Program with Standard I/O
 
-1. _[setup]_: Install [`racket`](https://racket-lang.org). It should be
-   usable from the shell as `racket`.
-2. _[setup]_: Clone the repository
-   [lucasem/list-routines](https://github.com/lucasem/list-routines)
-3. _[run]_: Execute `racket src/loader.rkt`
+```sh
+$ racket src/loader.rkt
+```
 
 The usage is based on line-delimited JSON input/output. The docstring at the
 top of
@@ -37,12 +45,21 @@ describes the format of the input and output JSON.
 
 ## Export Static Examples
 
-1. _[setup]_: Install [`racket`](https://racket-lang.org). It should be
-   usable from the shell as `racket`.
-2. _[setup]_: Clone the repository
-   [lucasem/list-routines](https://github.com/lucasem/list-routines)
-3. _[run]_: Execute `racket -o output.json etc/generate_static.rkt` to save
-   exported routines to `output.json`.
+```sh
+# saves exported routines to output.json:
+$ racket etc/generate_static.rkt -o output.json
+```
+
+You may set the number of generated examples
+using `--train` and `--test` (see `--help` for details).
+
+The output of the racket script isn't so pretty. To make it pretty (like
+the example below), use the provided vim script:
+```sh
+$ vim -s etc/clean_static.vim output.json
+# if using neovim, pass --headless to make things faster
+$ nvim --headless -s etc/clean_static.vim output.json
+```
 
 The output JSON is a list of exported routines of the following form:
 ```json
@@ -66,12 +83,4 @@ The output JSON is a list of exported routines of the following form:
       { "i": [ 8, 5 ], "o": [ 21, 18 ] }
     ]
   }
-```
-
-The output of the racket script isn't so pretty. To make it pretty (like
-shown above), use the provided vim script:
-```sh
-vim -s etc/clean_static.vim output.json
-# if using neovim, pass --headless to make things faster
-nvim --headless -s etc/clean_static.vim output.json
 ```
