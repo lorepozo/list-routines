@@ -18,16 +18,16 @@ see the [Project Homepage](https://lucasem.github.io/list-routines/).
 1. Install [`racket`](http://racket-lang.org). It should be usable from the
    shell as `racket`.
 2. Install rust via [rustup.rs](https://rustup.rs).
-3. Set the toolchain to `nightly-2017-12-20`:
+3. In the project directory, set the project's toolchain to `nightly`:
    ```sh
-   $ rustup default nightly-2017-12-20
+   $ rustup override set nightly
    ```
 
 ## Run
 
 Use `cargo run` to run the server. Add the `--release` flag for better
 performance (and slower compilation). **This must be executed from the
-project root directory** (for now).
+project root directory**.
 
 ## Adding routines
 
@@ -62,4 +62,4 @@ output written to routines.graph
 
 ## Testing
 
-Run `cargo test routines -- --nocapture` to test all of the routines.
+Run `cargo test -- --nocapture` to test everything.
