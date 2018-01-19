@@ -13,6 +13,6 @@ setup(
             'Programming Language :: Python :: 2.7',
             'Programming Language :: Python :: 3.6',
         ],
-    packages=find_packages(),
-    install_requires = ['requests'],
+    packages=['.'],
+    install_requires=['requests'],
 )

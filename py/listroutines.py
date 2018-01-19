@@ -28,7 +28,10 @@ class APIError(BaseException):
     def __init__(self, msg):
         self.msg = msg
 
-    def msg(self):
+    def __repr__(self, msg):
+        return "APIError({msg})".format(msg=self.msg)
+
+    def __str__(self, msg):
         return self.msg
 
 
