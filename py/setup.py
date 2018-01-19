@@ -10,6 +10,7 @@ setup(
     author='Lucas E. Morales',
     author_email='lucas@lucasem.com',
     classifiers=[
+            'Programming Language :: Python :: 2.7',
             'Programming Language :: Python :: 3.6',
         ],
     packages=find_packages(),

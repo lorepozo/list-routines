@@ -340,12 +340,22 @@ fn homepage_redirect() -> Redirect {
     )
 }
 
+/// The py endpoint redirects to a python wheel file.
+#[get("/listroutines-1.0.0-py2.py3-none-any.whl")]
+fn py_redirect() -> Redirect {
+    Redirect(
+        Status::TemporaryRedirect,
+        String::from("https://docs.lucasem.com/misc/listroutines-1.0.0-py2.py3-none-any.whl"),
+    )
+}
+
 /// Attaches the api to the root of the given `Rocket` instance.
 pub fn mount(r: rocket::Rocket) -> rocket::Rocket {
     r.mount(
         "/",
         routes![
             homepage_redirect,
+            py_redirect,
             find,
             description,
             is_parametric,
