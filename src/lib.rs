@@ -12,7 +12,7 @@
 //!
 //! This dataset is in the form of a web server.
 
-#![feature(plugin,custom_derive,decl_macro)]
+#![feature(plugin, custom_derive, decl_macro)]
 #![plugin(rocket_codegen)]
 
 extern crate itertools;
@@ -27,3 +27,34 @@ extern crate workerpool;
 pub mod api;
 pub mod graph;
 pub mod routine;
+
+use std::fs::File;
+use std::io::ErrorKind;
+use std::process::Command;
+
+pub fn ensure_routine_loader() {
+    let f = File::open("src/racket/loader");
+    if f.is_ok() {
+        return;
+    }
+    let e = f.unwrap_err();
+    if e.kind() != ErrorKind::NotFound {
+        panic!(e)
+    }
+
+    eprintln!("Routine loader binary not found. Compiling...");
+    let status = Command::new("raco")
+        .arg("exe")
+        .arg("src/racket/loader.rkt")
+        .status()
+        .expect("failed to start raco, racket might not be installed");
+
+    if status.success() {
+        eprintln!("Successfully compiled routine loader");
+    } else {
+        panic!(
+            "Failed to compile loader using `raco exe src/racket/loader.rkt`: code {}",
+            status
+        )
+    }
+}

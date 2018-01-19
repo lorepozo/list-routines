@@ -133,9 +133,7 @@ impl DiGraph {
                 continue;
             }
             write!(w, "{}: ", i + 1)?;
-            w.write_all(
-                v.iter().map(|j| format!("{}", j + 1)).join(" ").as_bytes(),
-            )?;
+            w.write_all(v.iter().map(|j| format!("{}", j + 1)).join(" ").as_bytes())?;
             w.write_all(b"\n")?;
         }
         Ok(())

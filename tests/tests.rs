@@ -12,6 +12,7 @@ use serde::de::DeserializeOwned;
 
 use listroutines::api::{self, urlencode};
 use listroutines::routine::{Input, Output};
+use listroutines::ensure_routine_loader;
 
 const FIND_COUNT: u32 = 100;
 const GENERATE_COUNT: u32 = 3;
@@ -57,6 +58,7 @@ fn connect_to_new_server() -> Client {
 
 #[test]
 fn routines() {
+    ensure_routine_loader();
     let client = connect_to_new_server();
 
     let path = format!("/find?count={}", FIND_COUNT);

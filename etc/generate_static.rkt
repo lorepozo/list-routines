@@ -1,6 +1,7 @@
 #lang racket
 
 (require json racket/cmdline)
+(require "../src/racket/routines/main.rkt")
 
 (define TRAIN-GEN-COUNT (make-parameter 5))
 (define TEST-GEN-COUNT (make-parameter 10))
@@ -37,43 +38,16 @@
                        (string-append (symbol->string k) "=" (jsexpr->string v)))) #t)))
 
 
-(define (info routine-file)
-  (eval `(begin
-           (require ,(string-append "src/routines/" routine-file))
-           (define h (make-hash))
-           (hash-set! h 'description description)
-           (hash-set! h 'is-parametric is-parametric)
-           (hash-set! h 'deps deps)
-           (hash-set! h 'evaluate evaluate)
-           (hash-set! h 'generate generate)
-           (if is-parametric
-               (hash-set! h 'example-params example-params)
-               (hash-set! h 'examples examples))
-           h)
-        (make-base-namespace)))
-
-(define routines ; alist of name → hash table
-  (map (λ (routine-file)
-         (let ([name (substring routine-file 0
-                                (- (string-length routine-file) 4))]
-               [h    (info routine-file)])
-           (cons name h)))
-       (filter
-         (λ (path) (string-suffix? path ".rkt"))
-         (map path->string (directory-list "src/routines")))))
-
-(define (routine-data-parametric r)
-  (let* ([h (cdr r)]
-         [name (car r)]
-         [nh `#hash((is_parametric . #t)
-                    (description . ,(hash-ref h 'description))
-                    (dependencies . ,(hash-ref h 'deps)))]
-         [make-io (λ (cnt params)
-                    (let ([inputs ((hash-ref h 'generate) (hash-set params 'count cnt))])
-                      (map (λ (i)
-                              (let ([o ((hash-ref h 'evaluate) i params)])
-                                `#hash((i . ,i) (o . ,o))))
-                           inputs)))])
+(define (routine-data-parametric name h)
+  (let ([nh `#hash((is_parametric . #t)
+                   (description . ,(hash-ref h 'description))
+                   (dependencies . ,(hash-ref h 'deps)))]
+        [make-io (λ (cnt params)
+                   (let ([inputs ((hash-ref h 'generate) (hash-set params 'count cnt))])
+                     (map (λ (i)
+                             (let ([o ((hash-ref h 'evaluate) i params)])
+                               `#hash((i . ,i) (o . ,o))))
+                          inputs)))])
     (map (λ (params)
            (let ([nh (hash-copy nh)])
              (hash-set! nh 'name (string-append name " with " (pretty-params params)))
@@ -81,15 +55,14 @@
              (hash-set! nh 'test (make-io (TEST-GEN-COUNT) params))
              nh))
          (hash-ref h 'example-params))))
-(define (routine-data-nonparametric r)
-  (let* ([h (cdr r)]
-         [name (car r)]
-         [make-io (λ (inputs)
-                    (map (λ (i)
-                            (let ([o ((hash-ref h 'evaluate) i)])
-                              `#hash((i . ,i) (o . ,o))))
-                         inputs))]
-         [nh (make-hash)])
+
+(define (routine-data-nonparametric name h)
+  (let ([make-io (λ (inputs)
+                   (map (λ (i)
+                           (let ([o ((hash-ref h 'evaluate) i)])
+                             `#hash((i . ,i) (o . ,o))))
+                        inputs))]
+        [nh (make-hash)])
     (hash-set! nh 'name name)
     (hash-set! nh 'is_parametric #f)
     (hash-set! nh 'description (hash-ref h 'description))
@@ -97,9 +70,16 @@
     (hash-set! nh 'train (make-io (hash-ref h 'examples)))
     (hash-set! nh 'test (make-io ((hash-ref h 'generate) `#hash((count . ,(TEST-GEN-COUNT))))))
     nh))
-(define (routine-data r)
-  (if (hash-ref (cdr r) 'is-parametric)
-      (routine-data-parametric r)
-      (list (routine-data-nonparametric r))))
 
-(write-json (append-map routine-data routines))
+(define (routine-data arg)
+  (let ([name (car arg)] [h (cdr arg)])
+    (if (hash-ref h 'is-parametric)
+      (routine-data-parametric name h)
+      (list (routine-data-nonparametric name h)))))
+
+(define alphabetized-routines
+  (map (λ (s) (cons s (hash-ref routines (string->symbol s))))
+       (sort (map symbol->string (hash-keys routines))
+             string<?)))
+
+(write-json (append-map routine-data alphabetized-routines))

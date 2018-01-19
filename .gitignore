@@ -1,5 +1,5 @@
 Cargo.lock
 /target/
 **/*.rs.bk
-/etc/routines.md
-**/compiled
+**/compiled/
+/src/racket/loader

@@ -16,7 +16,7 @@ see the [Project Homepage](https://lucasem.github.io/list-routines/).
 ## Installation
 
 1. Install [`racket`](http://racket-lang.org). It should be usable from the
-   shell as `racket`.
+   shell as `racket` and via `raco`.
 2. Install rust via [rustup.rs](https://rustup.rs).
 3. In the project directory, set the project's toolchain to `nightly`:
    ```sh
@@ -53,11 +53,12 @@ parametric. See existing routine implementations for examples.
 - `examples`, list of INPUTs
 - `generate`, params => list of INPUTs
 
-After routines are added, create the `routines.graph` file:
+After routines are added, create the `routines.graph` file and call `_update.py`:
 
 ```sh
 $ racket etc/generate_graph.rkt
 output written to routines.graph
+$ python3 src/racket/routines/_update.py
 ```
 
 ## Testing

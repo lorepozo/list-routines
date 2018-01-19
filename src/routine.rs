@@ -197,7 +197,8 @@ impl FromData for Input {
 pub struct EvalInput {
     pub input: Input,
 
-    #[serde(default)] pub params: serde_json::Map<String, serde_json::Value>,
+    #[serde(default)]
+    pub params: serde_json::Map<String, serde_json::Value>,
 }
 impl FromData for EvalInput {
     type Error = serde_json::Error;
@@ -446,8 +447,7 @@ struct Racket {
 }
 impl Default for Racket {
     fn default() -> Self {
-        let child = Command::new("racket")
-            .arg("src/loader.rkt")
+        let child = Command::new("./src/racket/loader")
             .stdin(Stdio::piped())
             .stdout(Stdio::piped())
             .stderr(Stdio::inherit())

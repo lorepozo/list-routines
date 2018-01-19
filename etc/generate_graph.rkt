@@ -1,35 +1,34 @@
 #lang racket
 
 (require web-server/templates)
+(require "../src/racket/routines/main.rkt")
 
-(define (name routine)
-  (substring routine 0 (- (string-length routine) 4)))
+(define routine-names
+  (sort (map symbol->string (hash-keys routines))
+        string<?))
 
-(define (dependencies routine)
-  (eval `(begin
-           (require ,(string-append "src/routines/" routine))
-           deps)
-        (make-base-namespace)))
-
-(define routines ; list of (name number deps)
-  (let ([numbering 0])
+(define routine-numbers ; hashtable of name → number
+  (let ([h (make-hash)] [numbering 0])
     (map (λ (r)
             (set! numbering (+ numbering 1))
-            (list (name r) numbering (dependencies r)))
-         (filter
-           (λ (path) (string-suffix? path ".rkt"))
-           (map path->string (directory-list "src/routines"))))))
+            (hash-set! h r numbering))
+         routine-names)
+    h))
 
-(define (routine-number routine)
-  (second (assoc routine routines)))
+(define (r:number routine)
+  (hash-ref routine-numbers routine))
+(define (r:deps routine)
+  (hash-ref (hash-ref routines (string->symbol routine)) 'deps))
 
-(define first-line (string-join (map first routines)))
-(define later-lines (map (λ (info)
-                            (string-append
-                              (number->string (second info))
-                              ": "
-                              (string-join (map number->string (map routine-number (third info))))))
-                         (filter (λ (info) (not (empty? (third info)))) routines)))
+(define first-line (string-join routine-names))
+(define later-lines
+  (map (λ (r)
+          (string-append (number->string (r:number r)) ": "
+                         (string-join
+                           (map number->string
+                                (map r:number (r:deps r))))))
+       (filter (λ (r) (not (empty? (r:deps r))))
+               routine-names)))
 
 (define out (open-output-file "routines.graph" #:exists 'replace))
 (display first-line out)

@@ -1,6 +1,7 @@
 #lang racket
 
 (require json web-server/templates)
+(require "../src/racket/routines/main.rkt")
 
 (define (pretty-params h)
   (string-join
@@ -10,38 +11,11 @@
                        (string-append (symbol->string k) "=" (jsexpr->string v)))) #t)
     ", "))
 
-(define (info routine-file)
-  (eval `(begin
-           (require ,(string-append "src/routines/" routine-file))
-           (define h (make-hash))
-           (hash-set! h 'description description)
-           (hash-set! h 'is-parametric is-parametric)
-           (hash-set! h 'deps deps)
-           (hash-set! h 'evaluate evaluate)
-           (hash-set! h 'generate generate)
-           (if is-parametric
-               (hash-set! h 'example-params example-params)
-               (hash-set! h 'examples examples))
-           h)
-        (make-base-namespace)))
-
-(define routine-docs ; alist of name → hash table
-  (map (λ (routine-file)
-         (let ([name (substring routine-file 0
-                                (- (string-length routine-file) 4))]
-               [h    (info routine-file)])
-           (cons name h)))
-       (filter
-         (λ (path) (string-suffix? path ".rkt"))
-         (map path->string (directory-list "src/routines")))))
-
-
 (define (routine-is-parametric routine)
-  (hash-ref (cdr (assoc routine routine-docs)) 'is-parametric))
+  (hash-ref (hash-ref routines (string->symbol routine)) 'is-parametric))
 
-(define (routine-template r)
-  (let* ([routine       (car r)]
-         [h             (cdr r)]
+(define (routine-template routine)
+  (let* ([h             (hash-ref routines (string->symbol routine))]
          [is-parametric (hash-ref h 'is-parametric)]
          [description   (hash-ref h 'description)]
          [deps          (hash-ref h 'deps)]
@@ -69,6 +43,11 @@
 (define (main-template content)
   (include-template "docs_template_main.md"))
 
-(display (main-template (string-join (map routine-template routine-docs) "\n"))
+(display (main-template (string-join
+                          (map routine-template
+                               (sort
+                                 (map symbol->string (hash-keys routines))
+                                 string<?))
+                          "\n"))
          (open-output-file "routines.md" #:exists 'replace))
 (display "output written to routines.md\n")
