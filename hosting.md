@@ -6,7 +6,7 @@
 ## Setup
 
 1. Install [racket](https://racket-lang.org). It should be usable from the
-   shell as `racket`.
+   shell as `racket` and via `raco`.
 2. Clone the repository
    [lucasem/list-routines](https://github.com/lucasem/list-routines) and
    change into its directory:
@@ -34,12 +34,13 @@ website](/).
 ## Local Program with Standard I/O
 
 ```sh
-$ racket src/loader.rkt
+$ raco exe src/racket/loader.rkt
+$ ./src/racket/loader
 ```
 
 The usage is based on line-delimited JSON input/output. The docstring at the
 top of
-[loader.rkt](https://github.com/lucasem/list-routines/blob/master/src/loader.rkt)
+[loader.rkt](https://github.com/lucasem/list-routines/blob/master/src/racket/loader.rkt)
 describes the format of the input and output JSON.
 
 
