@@ -46,7 +46,7 @@ The following usage examples, using the `curl` command-line tool, assume
 you've set a shell variable with the api url:
 
 ```bash
-$ api="http://localhost:8000"
+$ api="https://lists.lucasem.com"
 ```
 
 - **FIND** (GET) `/find` returns a list of `id`s of routines in the dataset.
@@ -122,11 +122,9 @@ $ api="http://localhost:8000"
 
 # Python API
 
-To use the python driver for this API you must be using python &#8805; 3.6.
-Clone the repository and execute the following:
-
+To use the python driver for this API, install the package:
 ```sh
-$ pip install -e listroutines/py
+pip install https://lists.lucasem.com/listroutines-1.0.0-py2.py3-none-any.whl
 ```
 
 The module at
@@ -192,7 +190,8 @@ addk.eval([5, 2, 0], **params)
 ```
 
 Advanced users can set the `listroutines.api` variable to the api url
-(defaults to `http://localhost:8000`).
+(defaults to `https://lists.lucasem.com`. If you're hosting locally, use
+`http://localhost:8000`).
 
 # [Routine documentation](routines)
 
