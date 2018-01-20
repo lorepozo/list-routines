@@ -20,7 +20,7 @@
   (if (empty? l)
       '()
       (let* ([k (hash-ref-integer params 'k 'null)] ; never null b/c validate-params
-             [shift (modulo k (length l))])
+             [shift (modulo (* -1 k) (length l))])
         (append (drop l shift) (take l shift)))))
 
 (define generate (generate-many
