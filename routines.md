@@ -163,6 +163,21 @@ Examples:
 
 
 
+### empty
+
+`empty` determines if the list is empty.
+
+Examples:
+- [1,2,3] => false
+- [] => true
+- [0] => false
+- [1,1,2,1] => false
+- [] => true
+
+
+Conceptual dependencies:
+- [len](#len)
+
 ### evens
 
 `evens` gets only even numbers of the list.
