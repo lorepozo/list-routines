@@ -211,5 +211,6 @@ further questions.
 # Not yet implemented
 
 The following feature will be implemented soon:
+- generate-params and validate-params.
 - Properties of routines: simple tags to associate with routines, and ways
   of constraining find queries with them.
