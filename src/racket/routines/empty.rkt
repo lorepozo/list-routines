@@ -14,7 +14,7 @@
 
 (define generate (generate-many
   (λ (params)
-     (if (flip)
+     (if (flip 0.2)
          '()
          (let ([len (hash-ref-integer params 'len (random 8)
                                       #:validator nonnegative?)])
