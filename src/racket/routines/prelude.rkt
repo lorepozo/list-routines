@@ -66,5 +66,5 @@
                 [else
                  (lp (list-set l (index-where l where) (random min max)))])))))
 
-(define (flip #:p [p 0.5])
+(define (flip [p 0.5])
   (< (random) p))
