@@ -26,6 +26,23 @@
 )
 
 (let ()
+  (local-require "append-index-k.rkt")
+  (set! h (make-hash))
+  (hash-set! h 'description description)
+  (hash-set! h 'is-parametric is-parametric)
+  (hash-set! h 'deps deps)
+  (hash-set! h 'validate validate)
+  (hash-set! h 'evaluate evaluate)
+  (hash-set! h 'generate generate)
+  (if is-parametric
+      (begin
+        (hash-set! h 'example-params example-params)
+        (hash-set! h 'validate-params validate-params))
+      (hash-set! h 'examples examples))
+  (hash-set! routines 'append-index-k h)
+)
+
+(let ()
   (local-require "append-k.rkt")
   (set! h (make-hash))
   (hash-set! h 'description description)
@@ -604,6 +621,23 @@
 )
 
 (let ()
+  (local-require "prepend-index-k.rkt")
+  (set! h (make-hash))
+  (hash-set! h 'description description)
+  (hash-set! h 'is-parametric is-parametric)
+  (hash-set! h 'deps deps)
+  (hash-set! h 'validate validate)
+  (hash-set! h 'evaluate evaluate)
+  (hash-set! h 'generate generate)
+  (if is-parametric
+      (begin
+        (hash-set! h 'example-params example-params)
+        (hash-set! h 'validate-params validate-params))
+      (hash-set! h 'examples examples))
+  (hash-set! routines 'prepend-index-k h)
+)
+
+(let ()
   (local-require "prepend-k.rkt")
   (set! h (make-hash))
   (hash-set! h 'description description)
@@ -686,6 +720,57 @@
         (hash-set! h 'validate-params validate-params))
       (hash-set! h 'examples examples))
   (hash-set! routines 'remove-mod-k h)
+)
+
+(let ()
+  (local-require "repeat-k.rkt")
+  (set! h (make-hash))
+  (hash-set! h 'description description)
+  (hash-set! h 'is-parametric is-parametric)
+  (hash-set! h 'deps deps)
+  (hash-set! h 'validate validate)
+  (hash-set! h 'evaluate evaluate)
+  (hash-set! h 'generate generate)
+  (if is-parametric
+      (begin
+        (hash-set! h 'example-params example-params)
+        (hash-set! h 'validate-params validate-params))
+      (hash-set! h 'examples examples))
+  (hash-set! routines 'repeat-k h)
+)
+
+(let ()
+  (local-require "repeat-many.rkt")
+  (set! h (make-hash))
+  (hash-set! h 'description description)
+  (hash-set! h 'is-parametric is-parametric)
+  (hash-set! h 'deps deps)
+  (hash-set! h 'validate validate)
+  (hash-set! h 'evaluate evaluate)
+  (hash-set! h 'generate generate)
+  (if is-parametric
+      (begin
+        (hash-set! h 'example-params example-params)
+        (hash-set! h 'validate-params validate-params))
+      (hash-set! h 'examples examples))
+  (hash-set! routines 'repeat-many h)
+)
+
+(let ()
+  (local-require "repeat.rkt")
+  (set! h (make-hash))
+  (hash-set! h 'description description)
+  (hash-set! h 'is-parametric is-parametric)
+  (hash-set! h 'deps deps)
+  (hash-set! h 'validate validate)
+  (hash-set! h 'evaluate evaluate)
+  (hash-set! h 'generate generate)
+  (if is-parametric
+      (begin
+        (hash-set! h 'example-params example-params)
+        (hash-set! h 'validate-params validate-params))
+      (hash-set! h 'examples examples))
+  (hash-set! routines 'repeat h)
 )
 
 (let ()

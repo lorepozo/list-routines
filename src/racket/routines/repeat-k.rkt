@@ -4,25 +4,24 @@
 (require "prelude.rkt")
 
 (define is-parametric #t)
-(define description "adds `k` to each element.")
+(define description "repeats the given list `k` times.")
 (define deps '())
 
 (define example-params
-  '(#hash((k . 1))
-    #hash((k . 2))
+  '(#hash((k . 2))
     #hash((k . 3))
-    #hash((k . -2))
-    #hash((k . 10))))
+    #hash((k . 5))))
 
 (define (validate-params params)
-  (not (null? (hash-ref-integer params 'k 'null))))
+  (let ([k (hash-ref-integer params 'k 'null)])
+    (and (not (null? k)) (nonnegative? k))))
 (define (validate l params) (and (list? l) (andmap integer? l)))
 (define (evaluate l params)
-  (let ([k (hash-ref-integer params 'k 'null)]) ; never null b/c validate-params
-    (map (λ (x) (+ x k)) l)))
+  (let ([k (hash-ref-integer params 'k 'null)])
+    (append-map (λ _ l) (range k))))
 
 (define generate (generate-many
   (λ (params)
-     (let ([len (hash-ref-integer params 'len (random 8)
-                                  #:validator nonnegative?)])
+     (let* ([len (hash-ref-integer params 'len (random 6)
+                                   #:validator nonnegative?)])
        (random-list #:len len)))))
