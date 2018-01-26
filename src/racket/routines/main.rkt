@@ -672,6 +672,23 @@
 )
 
 (let ()
+  (local-require "range.rkt")
+  (set! h (make-hash))
+  (hash-set! h 'description description)
+  (hash-set! h 'is-parametric is-parametric)
+  (hash-set! h 'deps deps)
+  (hash-set! h 'validate validate)
+  (hash-set! h 'evaluate evaluate)
+  (hash-set! h 'generate generate)
+  (if is-parametric
+      (begin
+        (hash-set! h 'example-params example-params)
+        (hash-set! h 'validate-params validate-params))
+      (hash-set! h 'examples examples))
+  (hash-set! routines 'range h)
+)
+
+(let ()
   (local-require "remove-index-k.rkt")
   (set! h (make-hash))
   (hash-set! h 'description description)
