@@ -247,6 +247,57 @@
 )
 
 (let ()
+  (local-require "identify-is-mod-k.rkt")
+  (set! h (make-hash))
+  (hash-set! h 'description description)
+  (hash-set! h 'is-parametric is-parametric)
+  (hash-set! h 'deps deps)
+  (hash-set! h 'validate validate)
+  (hash-set! h 'evaluate evaluate)
+  (hash-set! h 'generate generate)
+  (if is-parametric
+      (begin
+        (hash-set! h 'example-params example-params)
+        (hash-set! h 'validate-params validate-params))
+      (hash-set! h 'examples examples))
+  (hash-set! routines 'identify-is-mod-k h)
+)
+
+(let ()
+  (local-require "identify-is-prime.rkt")
+  (set! h (make-hash))
+  (hash-set! h 'description description)
+  (hash-set! h 'is-parametric is-parametric)
+  (hash-set! h 'deps deps)
+  (hash-set! h 'validate validate)
+  (hash-set! h 'evaluate evaluate)
+  (hash-set! h 'generate generate)
+  (if is-parametric
+      (begin
+        (hash-set! h 'example-params example-params)
+        (hash-set! h 'validate-params validate-params))
+      (hash-set! h 'examples examples))
+  (hash-set! routines 'identify-is-prime h)
+)
+
+(let ()
+  (local-require "identify-k.rkt")
+  (set! h (make-hash))
+  (hash-set! h 'description description)
+  (hash-set! h 'is-parametric is-parametric)
+  (hash-set! h 'deps deps)
+  (hash-set! h 'validate validate)
+  (hash-set! h 'evaluate evaluate)
+  (hash-set! h 'generate generate)
+  (if is-parametric
+      (begin
+        (hash-set! h 'example-params example-params)
+        (hash-set! h 'validate-params validate-params))
+      (hash-set! h 'examples examples))
+  (hash-set! routines 'identify-k h)
+)
+
+(let ()
   (local-require "index-head.rkt")
   (set! h (make-hash))
   (hash-set! h 'description description)

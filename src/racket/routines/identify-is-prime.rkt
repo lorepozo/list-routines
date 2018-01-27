@@ -8,18 +8,17 @@
                  167 173 179 181 191 193 197 199))
 
 (define is-parametric #f)
-(define description "checks if all numbers of the list are prime (up to 200).")
-(define deps '("identify-is-prime"))
+(define description "replaces prime numbers with 1, leaving all others to 0.")
+(define deps '())
 
-(define examples '((2) (2 0) (5 11) (5 11 12)))
+(define examples '((2) (2 0) (5 11) (5 11 12) (2 3 4 5 7 9)))
 
 (define (validate l) (and (list? l) (andmap integer? l)))
-(define (evaluate l) (not (not (andmap (λ (x) (member x primes)) l))))
+(define (evaluate l)
+  (map (λ (x) (if (not (not (member x primes))) 1 0)) l))
 
 (define generate (generate-many
   (λ (params)
      (let* ([len (hash-ref-integer params 'len (random 8)
                                    #:validator nonnegative?)])
-       (if (flip)
-           (take (shuffle primes) len)
-           (random-list #:len len))))))
+       (random-list #:len len)))))
