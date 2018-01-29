@@ -1,24 +1,24 @@
-add-k append-index-k append-k caesar-cipher-k-modulo-n count-head-in-tail count-k dedup drop-k dup empty evens has-head-in-tail has-k head identify-is-mod-k identify-is-prime identify-k index-head index-k intersperse-k is-evens is-mod-k is-odds is-primes is-squares keep-mod-head keep-mod-k kth-largest kth-smallest last len max min modulo-k mult-k odds pop pow-base-k pow-k prepend-index-k prepend-k product range remove-index-k remove-mod-head remove-mod-k repeat repeat-k repeat-many replace-all-k-with-n replace-all-with-index-k replace-index-k-with-n reverse rotate-k slice-k-n sort sum tail take-k uniq
-2: 3 19
-4: 34 1
-5: 14 58 6
-10: 31
-12: 14 58 13
-18: 14 58 19
-19: 14
-22: 11 36 15
-24: 16
-26: 14 58 27
-27: 11 36
-28: 32
+add-k append-index-k append-k caesar-cipher-k-modulo-n count-head-in-tail count-k dedup drop-k dup empty evens has-head-in-tail has-k head identify-gte-k identify-is-mod-k identify-is-prime identify-k index-head index-k intersperse-k is-evens is-mod-k is-odds is-primes is-squares keep-mod-head keep-mod-k kth-largest kth-smallest last len max min modulo-k mult-k odds pop pow-base-k pow-k prepend-index-k prepend-k product range remove-index-k remove-mod-head remove-mod-k repeat repeat-k repeat-many replace-all-k-with-n replace-all-with-index-k replace-index-k-with-n reverse rotate-k slice-k-n sort sum tail take-k uniq
+2: 3 20
+4: 35 1
+5: 14 59 6
+10: 32
+12: 14 59 13
+19: 14 59 20
+20: 14
+23: 11 37 16
+25: 17
+27: 14 59 28
+28: 11 37
 29: 33
-38: 35
-39: 35
-40: 41 19
-44: 19
-45: 14 58 46
-46: 11 36
-47: 14 48
-49: 48 14 58
-52: 19
-55: 19 59
+30: 34
+39: 36
+40: 36
+41: 42 20
+45: 20
+46: 14 59 47
+47: 11 37
+48: 14 49
+50: 49 14 59
+53: 20
+56: 20 60
