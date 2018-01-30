@@ -247,7 +247,7 @@
 )
 
 (let ()
-  (local-require "identify-gte-k.rkt")
+  (local-require "identify-geq-k.rkt")
   (set! h (make-hash))
   (hash-set! h 'description description)
   (hash-set! h 'is-parametric is-parametric)
@@ -260,7 +260,7 @@
         (hash-set! h 'example-params example-params)
         (hash-set! h 'validate-params validate-params))
       (hash-set! h 'examples examples))
-  (hash-set! routines 'identify-gte-k h)
+  (hash-set! routines 'identify-geq-k h)
 )
 
 (let ()
