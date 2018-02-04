@@ -11,7 +11,7 @@
 (define examples '(1 2 3 7))
 
 (define (validate i) (and (integer? i) (positive? i) (< i 1000)))
-(define (evaluate i) (nth-prime (add1 i)))
+(define (evaluate i) (nth-prime (sub1 i)))
 
 (define generate (generate-many
   (λ (params)
