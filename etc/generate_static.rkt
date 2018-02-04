@@ -37,13 +37,19 @@
                        (string-append (symbol->string k) "=" v)
                        (string-append (symbol->string k) "=" (jsexpr->string v)))) #t)))
 
+(define (gen-uniq generate params cnt)
+  (let ([h (hash-set params 'count cnt)])
+    (let lp ([inps (generate h)])
+      (if (not (check-duplicates inps))
+          inps
+          (lp (generate (hash-set params 'count cnt)))))))
 
 (define (routine-data-parametric name h)
   (let ([nh `#hash((is_parametric . #t)
                    (description . ,(hash-ref h 'description))
                    (dependencies . ,(hash-ref h 'deps)))]
         [make-io (λ (cnt params)
-                   (let ([inputs ((hash-ref h 'generate) (hash-set params 'count cnt))])
+                   (let ([inputs (gen-uniq (hash-ref h 'generate) params cnt)])
                      (map (λ (i)
                              (let ([o ((hash-ref h 'evaluate) i params)])
                                `#hash((i . ,i) (o . ,o))))
@@ -68,7 +74,7 @@
     (hash-set! nh 'description (hash-ref h 'description))
     (hash-set! nh 'dependencies (hash-ref h 'deps))
     (hash-set! nh 'train (make-io (hash-ref h 'examples)))
-    (hash-set! nh 'test (make-io ((hash-ref h 'generate) `#hash((count . ,(TEST-GEN-COUNT))))))
+    (hash-set! nh 'test (make-io (gen-uniq (hash-ref h 'generate) '#hash() TEST-GEN-COUNT)))
     nh))
 
 (define (routine-data arg)

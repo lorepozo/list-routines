@@ -14,6 +14,13 @@
 (define (routine-is-parametric routine)
   (hash-ref (hash-ref routines (string->symbol routine)) 'is-parametric))
 
+(define (gen-uniq generate params)
+  (let ([h (hash-set params 'count 3)])
+    (let lp ([inps (generate h)])
+      (if (not (check-duplicates inps))
+          inps
+          (lp (generate (hash-set params 'count 3)))))))
+
 (define (routine-template routine)
   (let* ([h             (hash-ref routines (string->symbol routine))]
          [is-parametric (hash-ref h 'is-parametric)]
@@ -28,7 +35,7 @@
            [examples (map list
                           (map pretty-params example-params)
                           (map (λ (params)
-                                  (let* ([inps (generate (hash-set params 'count 3))]
+                                  (let* ([inps (gen-uniq generate params)]
                                          [outs (map (λ (inp) (evaluate inp params)) inps)]
                                          [inps (map jsexpr->string inps)]
                                          [outs (map jsexpr->string outs)])
