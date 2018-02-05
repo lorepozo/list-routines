@@ -1,5 +1,7 @@
 ## TODO:
 
+- routine type info
+- composed routines (using type info)
 - expose validate-params
 - generate-params
 - speed up access to static data (is_parametric, description, deps)
