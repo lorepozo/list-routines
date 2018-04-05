@@ -4,10 +4,6 @@ version = "0.1.0"
 authors = ["Lucas Morales <lucas@lucasem.com>"]
 
 [dependencies]
-itertools = "0.7.1"
-rocket_codegen = "0.3.6"
-rocket = "0.3.6"
-serde = "1.0"
-serde_json = "1.0"
-serde_derive = "1.0"
-workerpool = "1.1"
+phf = "0.7"
+phf_macros = "0.7"
+rand = "0.5.0-pre.0"
