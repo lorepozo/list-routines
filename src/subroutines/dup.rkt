@@ -1,0 +1,21 @@
+#lang racket/base
+(provide params input output description deps example-params evaluate generate)
+
+(require racket/list)
+(require "../prelude.rkt")
+
+(define input '(int-list))
+(define output '(int-list (length-mul k) elements))
+(define params '((k . (non-negative))))
+
+(define description "repeats each element `k` times.")
+(define deps '())
+
+(define example-params
+  '(((k . 2))
+    ((k . 3))
+    ((k . 5))))
+
+(define (evaluate l params) (append-map (λ (e) (list e e)) l))
+
+(define generate (generate-many))

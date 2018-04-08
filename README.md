@@ -10,24 +10,15 @@ OUTPUT:  Bool | Num | List<Num>
 ROUTINE: INPUT => OUTPUT
 ```
 
-This dataset is in the form of a web server. For information on using it,
-see the [Project Homepage](https://lucasem.github.io/list-routines/).
-
 ## Installation
 
 1. Install [`racket`](http://racket-lang.org). It should be usable from the
    shell as `racket` and via `raco`.
-2. Install rust via [rustup.rs](https://rustup.rs).
-3. In the project directory, set the project's toolchain to `nightly`:
-   ```sh
-   $ rustup override set nightly
-   ```
+2. Execute `raco exe -o list-routines src/main.rkt` to compile the binary.
 
-## Run
+## Usage
 
-Use `cargo run` to run the server. Add the `--release` flag for better
-performance (and slower compilation). **This must be executed from the
-project root directory**.
+TODO
 
 ## Adding routines
 
@@ -52,15 +43,3 @@ parametric. See existing routine implementations for examples.
 - `evaluate`, INPUT => OUTPUT
 - `examples`, list of INPUTs
 - `generate`, params => list of INPUTs
-
-After routines are added, create the `routines.graph` file and call `_update.py`:
-
-```sh
-$ racket etc/generate_graph.rkt
-output written to routines.graph
-$ python3 src/racket/routines/_update.py
-```
-
-## Testing
-
-Run `cargo test -- --nocapture` to test everything.

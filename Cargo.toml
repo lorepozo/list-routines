@@ -1,9 +1,0 @@
-[package]
-name = "listroutines"
-version = "0.1.0"
-authors = ["Lucas Morales <lucas@lucasem.com>"]
-
-[dependencies]
-phf = "0.7"
-phf_macros = "0.7"
-rand = "0.5.0-pre.0"
