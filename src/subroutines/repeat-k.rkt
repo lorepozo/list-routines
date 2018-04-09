@@ -5,8 +5,8 @@
 (require "../prelude.rkt")
 
 (define input '(int-list))
-(define output '(int-list (length-mul k) elements))
-(define params '((k . (non-negative))))
+(define output '(int-list no-smaller elements))
+(define params '((k . (positive))))
 
 (define description "repeats the given list `k` times.")
 (define deps '())

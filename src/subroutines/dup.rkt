@@ -5,16 +5,13 @@
 (require "../prelude.rkt")
 
 (define input '(int-list))
-(define output '(int-list (length-mul k) elements))
-(define params '((k . (non-negative))))
+(define output '(int-list no-smaller elements))
+(define params '())
 
-(define description "repeats each element `k` times.")
+(define description "duplicates each element")
 (define deps '())
 
-(define example-params
-  '(((k . 2))
-    ((k . 3))
-    ((k . 5))))
+(define example-params '(()))
 
 (define (evaluate l params) (append-map (λ (e) (list e e)) l))
 
