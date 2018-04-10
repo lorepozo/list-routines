@@ -5,7 +5,7 @@
 (require "../prelude.rkt")
 
 (define input '(int))
-(define output '(int-list each-non-negative))
+(define output '(int-list each-nonnegative))
 (define params '())
 
 (define description "returns a list of numbers from 0 up to – exclusively – the given number.")

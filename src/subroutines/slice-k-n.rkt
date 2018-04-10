@@ -6,7 +6,7 @@
 
 (define input '(int-list (length-at-least-sum (k n 1))))
 (define output '(int-list elements))
-(define params '((k . (positive)) (n . (non-negative))))
+(define params '((k . (positive)) (n . (nonnegative))))
 
 (define description "gets `n` numbers starting with the `k`-th number in the list.")
 (define deps '("index-k" "take-k"))

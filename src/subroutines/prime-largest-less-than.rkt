@@ -4,7 +4,7 @@
 (require math/number-theory)
 (require "../prelude.rkt")
 
-(define input '(int-at-least-3))
+(define input '(int (at-least 3)))
 (define output '(positive))
 (define params '())
 

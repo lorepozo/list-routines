@@ -3,7 +3,7 @@
 
 (require "../prelude.rkt")
 
-(define input '(int-list each-non-negative))
+(define input '(int-list each-nonnegative))
 (define output '(int-list same-length))
 (define params '((k . (int))))
 

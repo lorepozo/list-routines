@@ -5,7 +5,7 @@
 
 (define input '(int-list))
 (define output '(bool))
-(define params '((k . (non-zero))))
+(define params '((k . (nonzero))))
 
 (define description "checks if all numbers of the list are divisible by `k`.")
 (define deps '("evens" "odds" "identify-is-mod-k"))

@@ -5,7 +5,7 @@
 (require "../prelude.rkt")
 
 (define input '(int-list))
-(define output '(non-negative))
+(define output '(nonnegative))
 (define params '((k . (int))))
 
 (define description "counts occurrences of the number `k`.")

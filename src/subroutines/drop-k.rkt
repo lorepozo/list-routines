@@ -6,7 +6,7 @@
 
 (define input '(int-list (length-at-least k)))
 (define output '(int-list elements))
-(define params '((k . (non-negative))))
+(define params '((k . (nonnegative))))
 
 (define description "drops the first `k` numbers of the list.")
 (define deps '())

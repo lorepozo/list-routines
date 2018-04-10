@@ -4,7 +4,7 @@
 (require "../prelude.rkt")
 
 (define input '(int-list))
-(define output '(non-negative))
+(define output '(nonnegative))
 (define params '())
 
 (define description "gets the length of the list.")
