@@ -15,7 +15,7 @@
 
 (define (evaluate l params) 
   (let lp ([l l] [prev null])
-    (cond [(empty? l) (if (null? prev) prev (list prev))]
+    (cond [(null? l) (if (null? prev) prev (list prev))]
           [(null? prev) (lp (cdr l) (car l))]
           [(eq? (car l) prev) (lp (cdr l) prev)]
           [else (cons prev (lp (cdr l) (car l)))])))

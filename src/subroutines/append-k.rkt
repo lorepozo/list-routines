@@ -1,10 +1,11 @@
 #lang racket/base
 (provide params input output description deps example-params evaluate generate)
 
+(require "../prelude.rkt")
+
 (define input '(int-list))
 (define output '(int-list length-add1))
 (define params '((k . (int))))
-(require "../prelude.rkt")
 
 (define description "appends the number `k`.")
 (define deps '())

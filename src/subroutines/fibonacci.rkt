@@ -1,8 +1,8 @@
 #lang racket/base
 (provide params input output description deps example-params evaluate generate)
 
-(require "../prelude.rkt")
 (require math/number-theory)
+(require "../prelude.rkt")
 
 (define input '(nonnegative))
 (define output '(nonnegative))

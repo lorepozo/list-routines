@@ -1,7 +1,6 @@
 #lang racket/base
 (provide params input output description deps example-params evaluate generate)
 
-(require racket/list)
 (require "../prelude.rkt")
 
 (define input '(int-list (length-at-least 1)))
@@ -13,7 +12,7 @@
 
 (define example-params '(()))
 
-(define (evaluate l params) rest)
+(define (evaluate l params) (cdr l))
 
 (define generate (generate-many
   #:len-valid (λ (len _) (positive? len))
