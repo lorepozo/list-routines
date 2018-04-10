@@ -1,7 +1,7 @@
 #lang racket/base
 (provide routine?
          routine-eval
-         routine-generate)
+         routine-generate-input)
 
 (require racket/list)
 (require "subroutines.rkt")
@@ -67,7 +67,7 @@
             (lp (cdr rs) (add1 i)))))))
 
 ; returns list (input output) or #f
-(define (routine-generate rs [gen-params '((count . 1))])
+(define (routine-generate-input rs [gen-params '((count . 1))])
   (let ([tps (routine? rs)])
     (if (not tps)
         #f
@@ -78,7 +78,7 @@
           (let lp ([depth 0])
             (if (> depth 5)
                 #f
-                (let ([inps ((subroutine-generate r) params)])
+                (let ([inps ((subroutine-generate-input r) params)])
                   (if (andmap (λ (inp)
                                  (value-has-type? inp (vector-ref tps 0) params))
                               inps)
