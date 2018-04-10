@@ -1,5 +1,7 @@
 #lang racket/base
-(provide routine? routine-eval)
+(provide routine?
+         routine-eval
+         routine-generate)
 
 (require racket/list)
 (require "subroutines.rkt")
@@ -8,30 +10,30 @@
 ;;;  EXPORTED  ;;;
 ;;;;;;;;;;;;;;;;;;
 
-;;; a routine is a list with elements of the form (n . l) where n is the name, as
-;;; a symbol, of the subroutine and l is a list of arguments with length
-;;; params+1, each either ('static . value) or ('dyn . i) where i corresponds to:
+;;; a routine is a topologically-sorted list with elements of the form (n . l)
+;;; where n is the name, as a symbol, of the subroutine and l is a list of
+;;; arguments with length params+1, each either ('static . value) or ('dyn . i)
+;;; where i corresponds to:
 ;;;   0 for the overall input.
 ;;;   n for the output of the (n-1)th node.
 ;;; and static values can only be numbers.
 ;;; for example:
 ;;;   '((index-k (dyn . 0) (static . 3)) (add-k (dyn . 0) (dyn . 1)))
 ;;;   adds the 3rd number of a list to each of its members.
-;;;
-;;; 
+
 #| EXAMPLE:
 (require "routine.rkt")
 (define routine '((index-k (dyn . 0) (static . 3))
                   (add-k (dyn . 0) (dyn . 1))))
-(define inp '(0 5))
-(and (routine? routine inp)
-     (routine-eval routine inp))
-; Value: #f
-
 (define inp '(1 2 3 4 5))
 (and (routine? routine inp)
      (routine-eval routine inp))
 ; Value: '(4 5 6 7 8)
+
+(define inp '(0 5))
+(and (routine? routine inp)
+     (routine-eval routine inp))
+; Value: #f
 |#
 
 (define (routine? rs [inp #f])
@@ -39,12 +41,13 @@
        (connected? rs)
        (type-static-valid? rs)
        (let ([tps (type-valid? rs)])
-         (and tps
-              (or (not inp)
+         (if (not inp)
+             tps
+             (and tps
                   (value-has-type?
                     inp
                     (vector-ref tps 0)
-                    (get-params (cddar rs) #())))))))
+                    (get-params-dyn (cddar rs) #())))))))
 
 ; assume (routine? rs) is not #f.
 (define (routine-eval rs inp)
@@ -58,17 +61,43 @@
                           (cdadar rs)
                           (let* ([i (cdadar rs)])
                             (vector-ref vs i)))]
-                 [params (get-params (cddar rs) vs)]
+                 [params (get-params-dyn (cddar rs) vs)]
                  [out ((subroutine-evaluate r) inp params)])
             (vector-set! vs i out)
             (lp (cdr rs) (add1 i)))))))
+
+; returns list (input output) or #f
+(define (routine-generate rs [gen-params '((count . 1))])
+  (let ([tps (routine? rs)])
+    (if (not tps)
+        #f
+        (let* ([n (findf (λ (n) (equal? (cadr n) '(dyn . 0))) rs)] ; n cannot be #f
+               [r (subroutine-ref (car n))]
+               [params (get-params-static (cddr n))]
+               [params (append gen-params params)])
+          (let lp ([depth 0])
+            (if (> depth 5)
+                #f
+                (let ([inps ((subroutine-generate r) params)])
+                  (if (andmap (λ (inp)
+                                 (value-has-type? inp (vector-ref tps 0) params))
+                              inps)
+                      (map (λ (inp) (list inp (routine-eval rs inp))) inps)
+                      (begin
+                        (display `(bad-generation
+                                    (routine ,(car n))
+                                    (inps ,inps)
+                                    (tp ,(vector-ref tps 0))
+                                    (params ,params)))
+                        (newline)
+                        (lp (add1 depth)))))))))))
 
 
 ;;;;;;;;;;;;;;;;;;;;
 ;;;  EVALUATION  ;;;
 ;;;;;;;;;;;;;;;;;;;;
 
-(define (get-params param-reqs vs)
+(define (get-params-dyn param-reqs vs)
   (if (empty? param-reqs)
       null
       (let* ([k (if (eq? (caar param-reqs) 'static)
@@ -81,7 +110,20 @@
                          (let ([i (cdadr param-reqs)])
                            (vector-ref vs i))))]
              [ctx (if k `((k . ,k)) null)]
-             [ctx (if n (append ctx `(n . ,n)) ctx)])
+             [ctx (if n (append ctx `((n . ,n))) ctx)])
+        ctx)))
+
+
+(define (get-params-static param-reqs)
+  (if (empty? param-reqs)
+      null
+      (let* ([k (and (eq? (caar param-reqs) 'static)
+                     (cdar param-reqs))]
+             [n (and (> (length param-reqs) 1)
+                     (eq? (caadr param-reqs) 'static)
+                     (cdadr param-reqs))]
+             [ctx (if k `((k . ,k)) null)]
+             [ctx (if n (append ctx `((n . ,n))) ctx)])
         ctx)))
 
 
@@ -131,21 +173,21 @@
                  (vector->list tps))
                tps)
           (let* ([r (subroutine-ref (caar rs))]
-                 [context (get-context (cddar rs))])
+                 [params (get-params-static (cddar rs))])
             (vector-set! tps i (as-type (subroutine-output r)
                                         #:is-output #t
                                         #:input (as-type (subroutine-input r)
-                                                         #:context context)
-                                        #:context context))
+                                                         #:params params)
+                                        #:params params))
             (for-each
               (λ (x tp-labels)
                  (if (eq? (car x) 'dyn)
                    (let* ([j (cdr x)]
-                          [tp (as-type tp-labels #:context context)]
+                          [tp (as-type tp-labels #:params params)]
                           [old-tp (vector-ref tps j)]
                           [new-tp (if (equal? old-tp '(any))
                                       tp
-                                      (type-intersect-introduce old-tp tp context))])
+                                      (type-intersect-introduce old-tp tp params))])
                      (vector-set! tps j new-tp))
                    null))
               (cdar rs)
@@ -153,20 +195,6 @@
                     (map cdr (subroutine-params r))))
             (and (not (ormap not (vector->list tps)))
                  (lp (cdr rs) (add1 i))))))))
-
-; the "context" here is an alist of _value_ assignments to function parameters.
-; e.g. '((k . 2) (n . 5))
-(define (get-context param-reqs)
-  (if (empty? param-reqs)
-      null
-      (let* ([k (and (eq? (caar param-reqs) 'static)
-                     (cdar param-reqs))]
-             [n (and (> (length param-reqs) 1)
-                     (eq? (caadr param-reqs) 'static)
-                     (cdadr param-reqs))]
-             [ctx (if k `((k . ,k)) null)]
-             [ctx (if n (append ctx `(n . ,n)) ctx)])
-        ctx)))
 
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;
@@ -186,17 +214,17 @@
 (define (as-type tp-labels
                  #:is-output [is-output #f]
                  #:input [input '((0) . #f)]
-                 #:context [context null])
+                 #:params [params null])
   (if is-output
-    (or (lengthify-output tp-labels input context)
-        (number-type tp-labels input context)
+    (or (lengthify-output tp-labels input params)
+        (number-type tp-labels input params)
         '(bool))
-    (or (lengthify-input tp-labels context)
-        (number-type tp-labels input context))))
+    (or (lengthify-input tp-labels params)
+        (number-type tp-labels input params))))
 
-(define (lengthify-input tp-labels context)
+(define (lengthify-input tp-labels params)
   (let ([resolve (λ (x) (or (and (or (eq? x 'k) (eq? x 'n))
-                                 (let ([p (assoc x context)]) (and p (cdr p))))
+                                 (let ([p (assoc x params)]) (and p (cdr p))))
                             x))])
     (let lp ([tp-labels tp-labels] [length-at-least-sum '(0)] [each-nonnegative #f])
       (cond [(empty? tp-labels)
@@ -210,7 +238,7 @@
             [(and (pair? (car tp-labels)) (eq? (caar tp-labels) 'length-at-least-sum))
              (lp (cdr tp-labels) (map resolve (cadar tp-labels)) each-nonnegative)]
             [else #f]))))
-(define (lengthify-output tp-labels input context)
+(define (lengthify-output tp-labels input params)
   (let lp ([tp-labels tp-labels] [length-at-least-sum '(0)] [each-nonnegative #f])
     (cond [(empty? tp-labels)
            `(list ,length-at-least-sum ,each-nonnegative)]
@@ -231,9 +259,9 @@
           [(eq? (car tp-labels) 'length-sub1)
            (lp (cdr tp-labels) (append length-at-least-sum -1) each-nonnegative)]
           [else #f])))
-(define (number-type tp-labels input context)
+(define (number-type tp-labels input params)
   (let ([resolve (λ (x) (or (and (or (eq? x 'k) (eq? x 'n))
-                                 (let ([p (assoc x context)]) (and p (cdr p))))
+                                 (let ([p (assoc x params)]) (and p (cdr p))))
                             x))])
     (let lp ([tp-labels tp-labels] [at-least '-inf])
       (cond [(empty? tp-labels)
@@ -259,21 +287,21 @@
 
 ; original constraint was t1, newer constraint is t2.
 ; so we basically want to ensure all t1 satisfy t2.
-(define (type-intersect-introduce t1 t2 context)
-  (and (subtype? t1 t2 context) t1))
+(define (type-intersect-introduce t1 t2 params)
+  (and (subtype? t1 t2 params) t1))
 
-(define (subtype? t1 t2 context)
+(define (subtype? t1 t2 params)
   (cond [(not (eq? (car t1) (car t2))) #f]
         [(eq? (car t1) 'list)
          (and (if (caddr t2) (caddr t1) #t)
-              (>= (length-cmp (cadr t1) (cadr t2) context) 0)
+              (>= (length-cmp (cadr t1) (cadr t2) params) 0)
               )]
         [else #t]))
 
-(define (value-has-type? x tp [context null])
+(define (value-has-type? x tp [params null])
   (cond [(eq? (car tp) 'list)
          (and (list? x)
-              (>= (length x) (compute-length-bound (cadr tp) context))
+              (>= (length x) (compute-length-bound (cadr tp) params))
               (or (not (caddr tp))
                   (andmap (λ (n) (>= n 0)) x)))]
         [(eq? (car tp) 'number)
@@ -288,9 +316,9 @@
 ;          0 if l1 == l2
 ;          1 if l1 > l2
 ;         #f if indeterminate
-(define (length-cmp l1 l2 context)
-  (let ([l1-numerical (compute-length-bound l1 context)]
-        [l2-numerical (compute-length-bound l2 context)]
+(define (length-cmp l1 l2 params)
+  (let ([l1-numerical (compute-length-bound l1 params)]
+        [l2-numerical (compute-length-bound l2 params)]
         [l1-symbolic (sort (filter symbol? l1) symbol<?)]
         [l2-symbolic (sort (filter symbol? l2) symbol<?)])
     (if (not (eq? l1-symbolic l2-symbolic))
@@ -299,12 +327,12 @@
               [(> l1-numerical l2-numerical) 1]
               [else -1]))))
 
-; context is a alist that could define 'k or 'n.
+; params is a alist that could define 'k or 'n.
 ; If undefined, they are assumed nonnegative.
-(define (compute-length-bound nums context)
+(define (compute-length-bound nums params)
   (apply + (filter-map (λ (x)
                           (if (symbol? x)
-                            (let ([p (assoc x context)])
+                            (let ([p (assoc x params)])
                               (and p (cdr p)))
                             x))
                        nums)))
