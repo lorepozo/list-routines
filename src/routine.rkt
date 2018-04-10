@@ -2,13 +2,14 @@
 (provide routine?
          routine-eval
          routine-generate-input)
+(provide generate-routines)
 
-(require racket/list)
+(require racket/list racket/vector)
 (require "subroutines.rkt")
 
-;;;;;;;;;;;;;;;;;;
-;;;  EXPORTED  ;;;
-;;;;;;;;;;;;;;;;;;
+;;;;;;;;;;;;;;;;;
+;;;  ROUTINE  ;;;
+;;;;;;;;;;;;;;;;;
 
 ;;; a routine is a topologically-sorted list with elements of the form (n . l)
 ;;; where n is the name, as a symbol, of the subroutine and l is a list of
@@ -75,8 +76,8 @@
                [r (subroutine-ref (car n))]
                [params (get-params-static (cddr n))]
                [params (append gen-params params)])
-          (let lp ([depth 0])
-            (if (> depth 5)
+          (let lp ([retries 5])
+            (if (zero? retries)
                 #f
                 (let ([inps ((subroutine-generate-input r) params)])
                   (if (andmap (λ (inp)
@@ -84,13 +85,118 @@
                               inps)
                       (map (λ (inp) (list inp (routine-eval rs inp))) inps)
                       (begin
-                        (display `(bad-generation
-                                    (routine ,(car n))
-                                    (inps ,inps)
-                                    (tp ,(vector-ref tps 0))
-                                    (params ,params)))
-                        (newline)
-                        (lp (add1 depth)))))))))))
+                        (displayln
+                          `(bad-generation
+                             (routine ,(car n))
+                             (inps ,inps)
+                             (tp ,(vector-ref tps 0))
+                             (params ,params))
+                          (current-error-port))
+                        (lp (sub1 retries)))))))))))
+
+
+;;;;;;;;;;;;;;;;;;;;
+;;;  GENERATION  ;;;
+;;;;;;;;;;;;;;;;;;;;
+
+(define (generate-routines bound [rand-limit 8])
+  (if (< bound (hash-count all-subroutines))
+      (generate-routines-first-round rand-limit bound)
+      (let lp ([size 1] [generated (generate-routines-first-round rand-limit)])
+        ; generated is list of pairs (rs . tps)
+        (if (> size 7)
+            (begin
+              (displayln "requested too many routines" (current-error-port))
+              (map car generated))
+            (if (>= (length generated) bound)
+                (map car (take generated bound))
+                (lp (add1 size)
+                    (append generated
+                            (generate-routines-deepen generated rand-limit))))))))
+
+; generated is list of pairs (rs . tps)
+(define (generate-routines-deepen generated rand-limit)
+  (append-map
+    (λ (x)
+       (let ([rs (car x)] [tps (cdr x)])
+         (append-map
+           (λ (name)
+              (let* ([r (subroutine-ref name)]
+                     [arg-tp-labels (cons (subroutine-input r)
+                                          (map cdr (subroutine-params r)))]
+                     [arg-tps (map as-type arg-tp-labels)]
+                     [latest-output (vector-ref tps (sub1 (vector-length tps)))]
+                     [compatible-args
+                      (filter-map (λ (tp i) (and (subtype? tp latest-output) i))
+                                  arg-tps (range (length arg-tps)))])
+                (filter-map
+                  (λ (i)
+                     (let* ([args
+                             (map (λ (tp j)
+                                     (if (= i j)
+                                         `(dyn . ,(vector-length tps))
+                                         (if (eq? (car tp) 'list)
+                                             (ormap
+                                               (λ (x) (let ([rtp (car x)] [k (cdr x)])
+                                                  (and (subtype? rtp tp)
+                                                       `(dyn . ,k))))
+                                               (shuffle
+                                                 (map (λ (rtp k) (cons rtp k))
+                                                      (vector->list tps)
+                                                      (range (vector-length tps)))))
+                                             (or (and (flip 0.2)
+                                                      ; try to connect to some routine output
+                                                      (ormap
+                                                        (λ (x) (let ([rtp (car x)] [k (cdr x)])
+                                                           (and (subtype? rtp tp)
+                                                                `(dyn . ,k))))
+                                                        (shuffle
+                                                          (map (λ (rtp k) (cons rtp k))
+                                                               (vector->list tps)
+                                                               (range (vector-length tps))))))
+                                                 `(static ,(gen-param tp rand-limit))))))
+                                  arg-tps (range (length arg-tps)))])
+                       (and (not (ormap not args))
+                            (cons (append rs (list (cons name args)))
+                                  (vector-append
+                                    tps
+                                    (vector (as-type (subroutine-output r)
+                                                     #:is-output #t
+                                                     #:input (car arg-tps)
+                                                     #:params (get-params-static (cdr args)))))))))
+                  compatible-args)))
+           (hash-keys all-subroutines))))
+    generated))
+
+(define (generate-routines-first-round rand-limit [bound #f])
+  (map (λ (name)
+          (let* ([r (subroutine-ref name)]
+                 [node (append (list name '(dyn . 0))
+                               (map (λ (pair) (cons 'static (cdr pair)))
+                                    ((subroutine-generate-params r) rand-limit)))]
+                 [params (get-params-static (cddr node))])
+            (cons (list node)
+                  (vector (as-type (subroutine-output r)
+                                   #:is-output #t
+                                   #:input (as-type (subroutine-input r)
+                                                    #:params params)
+                                   #:params params)))))
+       (if bound
+           (take (hash-keys all-subroutines) bound)
+           (hash-keys all-subroutines))))
+
+
+(define (gen-param tp rand-limit)
+  (cond [(not (eq? (car tp) 'number)) (raise `("invalid param type" ,tp))]
+        [(eq? (cadr tp) '-inf)
+         (random (- rand-limit) rand-limit)]
+        [(eq? (cadr tp) 'nonzero)
+         (let lp ()
+           (let ([r (random (- rand-limit) rand-limit)])
+             (if (zero? r)
+                 (lp)
+                 r)))]
+        [else (random (cadr tp) (+ (cadr tp) rand-limit))]))
 
 
 ;;;;;;;;;;;;;;;;;;;;
@@ -127,9 +233,9 @@
         ctx)))
 
 
-;;;;;;;;;;;;;;;;;;;;;;;
-;;;  TYPE-CHECKING  ;;;
-;;;;;;;;;;;;;;;;;;;;;;;
+;;;;;;;;;;;;;;;;;;;;;;;;;;
+;;;  ROUTINE-CHECKING  ;;;
+;;;;;;;;;;;;;;;;;;;;;;;;;;
 
 (define (known-subroutines? rs)
   (andmap (λ (n) (hash-has-key? all-subroutines (car n)))
@@ -213,14 +319,14 @@
 
 (define (as-type tp-labels
                  #:is-output [is-output #f]
-                 #:input [input '((0) . #f)]
+                 #:input [input-tp '((0) . #f)]
                  #:params [params null])
   (if is-output
-    (or (lengthify-output tp-labels input params)
-        (number-type tp-labels input params)
+    (or (lengthify-output tp-labels input-tp params)
+        (number-type tp-labels input-tp params)
         '(bool))
     (or (lengthify-input tp-labels params)
-        (number-type tp-labels input params))))
+        (number-type tp-labels input-tp params))))
 
 (define (lengthify-input tp-labels params)
   (let ([resolve (λ (x) (or (and (or (eq? x 'k) (eq? x 'n))
@@ -238,7 +344,7 @@
             [(and (pair? (car tp-labels)) (eq? (caar tp-labels) 'length-at-least-sum))
              (lp (cdr tp-labels) (map resolve (cadar tp-labels)) each-nonnegative)]
             [else #f]))))
-(define (lengthify-output tp-labels input params)
+(define (lengthify-output tp-labels input-tp params)
   (let lp ([tp-labels tp-labels] [length-at-least-sum '(0)] [each-nonnegative #f])
     (cond [(empty? tp-labels)
            `(list ,length-at-least-sum ,each-nonnegative)]
@@ -249,17 +355,17 @@
           [(eq? (car tp-labels) 'binary)
            (lp (cdr tp-labels) length-at-least-sum #t)]
           [(eq? (car tp-labels) 'elements)
-           (lp (cdr tp-labels) length-at-least-sum (cdr input))]
+           (lp (cdr tp-labels) length-at-least-sum (or each-nonnegative (caddr input-tp)))]
           [(eq? (car tp-labels) 'same-length)
-           (lp (cdr tp-labels) (car input) each-nonnegative)]
+           (lp (cdr tp-labels) (cadr input-tp) each-nonnegative)]
           [(eq? (car tp-labels) 'no-smaller)
-           (lp (cdr tp-labels) (car input) each-nonnegative)]
+           (lp (cdr tp-labels) (cadr input-tp) each-nonnegative)]
           [(eq? (car tp-labels) 'length-add1)
-           (lp (cdr tp-labels) (append length-at-least-sum 1) each-nonnegative)]
+           (lp (cdr tp-labels) (cons 1 length-at-least-sum) each-nonnegative)]
           [(eq? (car tp-labels) 'length-sub1)
-           (lp (cdr tp-labels) (append length-at-least-sum -1) each-nonnegative)]
+           (lp (cdr tp-labels) (cons -1 length-at-least-sum) each-nonnegative)]
           [else #f])))
-(define (number-type tp-labels input params)
+(define (number-type tp-labels input-tp params)
   (let ([resolve (λ (x) (or (and (or (eq? x 'k) (eq? x 'n))
                                  (let ([p (assoc x params)]) (and p (cdr p))))
                             x))])
@@ -275,7 +381,7 @@
             [(eq? (car tp-labels) 'positive)
              (lp (cdr tp-labels) 1)]
             [(eq? (car tp-labels) 'element)
-             (lp (cdr tp-labels) (if (cdr input) 0 at-least))]
+             (lp (cdr tp-labels) (if (caddr input-tp) 0 at-least))]
             [(and (pair? (car tp-labels)) (eq? (caar tp-labels) 'at-least))
              (lp (cdr tp-labels) (resolve (cadar tp-labels)))]
             [else #f]))))
@@ -290,12 +396,12 @@
 (define (type-intersect-introduce t1 t2 params)
   (and (subtype? t1 t2 params) t1))
 
-(define (subtype? t1 t2 params)
+(define (subtype? t1 t2 [params null])
   (cond [(not (eq? (car t1) (car t2))) #f]
         [(eq? (car t1) 'list)
          (and (if (caddr t2) (caddr t1) #t)
-              (>= (length-cmp (cadr t1) (cadr t2) params) 0)
-              )]
+              (let ([cmp (length-cmp (cadr t1) (cadr t2) params)])
+                (and cmp (>= cmp 0))))]
         [else #t]))
 
 (define (value-has-type? x tp [params null])
@@ -327,6 +433,7 @@
               [(> l1-numerical l2-numerical) 1]
               [else -1]))))
 
+; nums corresponds to (cadr tp) where (eq? (car tp) 'list).
 ; params is a alist that could define 'k or 'n.
 ; If undefined, they are assumed nonnegative.
 (define (compute-length-bound nums params)
@@ -336,3 +443,11 @@
                               (and p (cdr p)))
                             x))
                        nums)))
+
+
+;;;;;;;;;;;;;;
+;;;  UTIL  ;;;
+;;;;;;;;;;;;;;
+
+(define (flip [p 0.5])
+  (< (random) p))

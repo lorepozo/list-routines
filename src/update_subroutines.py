@@ -22,7 +22,7 @@ TOP = """#lang racket/base
 (define (subroutine-ref name) (hash-ref all-subroutines name))
 (define subroutine-generate-input subroutine-generate)
 (define ((subroutine-generate-params r) [rand-limit 8])
-  (if (< (random) 0.2) ; use example
+  (if (flip 0.2) ; use example
       (let* ([example-params (subroutine-example-params r)]
              [len (length example-params)])
         (if (zero? len)
@@ -45,6 +45,9 @@ TOP = """#lang racket/base
              (if (zero? r)
                  (lp)
                  r)))]))
+
+(define (flip [p 0.5])
+  (< (random) p))
 
 (define all-subroutines (make-hash))
 """

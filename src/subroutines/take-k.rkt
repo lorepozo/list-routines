@@ -13,9 +13,9 @@
 (define deps '())
 
 (define example-params
-  '(#hash((k . 2))
-    #hash((k . 3))
-    #hash((k . 5))))
+  '(((k . 2))
+    ((k . 3))
+    ((k . 5))))
 
 (define (evaluate l params)
   (let ([k (assoc 'k params)])

@@ -13,10 +13,10 @@
 (define deps '("index-k"))
 
 (define example-params
-  '(#hash((k . 1) (n . 2))
-    #hash((k . 2) (n . 10))
-    #hash((k . 3) (n . -2))
-    #hash((k . 5) (n . 0))))
+  '(((k . 1) (n . 2))
+    ((k . 2) (n . 10))
+    ((k . 3) (n . -2))
+    ((k . 5) (n . 0))))
 
 (define (evaluate l params)
   (let ([k (cdr (assoc 'k params))]
