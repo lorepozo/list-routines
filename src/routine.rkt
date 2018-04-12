@@ -109,7 +109,12 @@
               (displayln "requested too many routines" (current-error-port))
               (map car generated))
             (if (>= (length generated) bound)
-                (map car (take generated bound))
+                (map (λ (x)
+                        (if (not (routine? (car x)))
+                            (displayln `(discrepancy ,x))
+                            null)
+                        (car x))
+                     (take generated bound))
                 (lp (add1 size)
                     (append generated
                             (generate-routines-deepen generated rand-limit))))))))
@@ -127,14 +132,14 @@
                      [arg-tps (map as-type arg-tp-labels)]
                      [latest-output (vector-ref tps (sub1 (vector-length tps)))]
                      [compatible-args
-                      (filter-map (λ (tp i) (and (subtype? tp latest-output) i))
+                      (filter-map (λ (tp i) (and (subtype? latest-output tp) i))
                                   arg-tps (range (length arg-tps)))])
                 (filter-map
                   (λ (i)
                      (let* ([args
                              (map (λ (tp j)
                                      (if (= i j)
-                                         `(dyn . ,(vector-length tps))
+                                         `(dyn . ,(sub1 (vector-length tps)))
                                          (if (eq? (car tp) 'list)
                                              (ormap
                                                (λ (x) (let ([rtp (car x)] [k (cdr x)])
@@ -144,7 +149,7 @@
                                                  (map (λ (rtp k) (cons rtp k))
                                                       (vector->list tps)
                                                       (range (vector-length tps)))))
-                                             (or (and (flip 0.2)
+                                             (or (and (flip 0.3)
                                                       ; try to connect to some routine output
                                                       (ormap
                                                         (λ (x) (let ([rtp (car x)] [k (cdr x)])
@@ -154,7 +159,7 @@
                                                           (map (λ (rtp k) (cons rtp k))
                                                                (vector->list tps)
                                                                (range (vector-length tps))))))
-                                                 `(static ,(gen-param tp rand-limit))))))
+                                                 `(static . ,(gen-param tp rand-limit))))))
                                   arg-tps (range (length arg-tps)))])
                        (and (not (ormap not args))
                             (cons (append rs (list (cons name args)))
@@ -174,13 +179,14 @@
                  [node (append (list name '(dyn . 0))
                                (map (λ (pair) (cons 'static (cdr pair)))
                                     ((subroutine-generate-params r) rand-limit)))]
-                 [params (get-params-static (cddr node))])
+                 [params (get-params-static (cddr node))]
+                 [inp-tp (as-type (subroutine-input r) #:params params)]
+                 [out-tp (as-type (subroutine-output r)
+                                  #:is-output #t
+                                  #:input inp-tp
+                                  #:params params)])
             (cons (list node)
-                  (vector (as-type (subroutine-output r)
-                                   #:is-output #t
-                                   #:input (as-type (subroutine-input r)
-                                                    #:params params)
-                                   #:params params)))))
+                  (vector inp-tp out-tp))))
        (if bound
            (take (hash-keys all-subroutines) bound)
            (hash-keys all-subroutines))))
@@ -311,7 +317,7 @@
 ;;; - ('list length-at-least-sum each-nonnegative)
 ;;;   * length-at-least-sum is a list containing integers
 ;;; - ('number at-least)
-;;;   * at-least is an integer or 'inf or 'nonzero
+;;;   * at-least is an integer or '-inf or 'nonzero
 ;;; - ('bool)
 ;;;
 ;;; the following functions serve to manipulate types given type labels (as
@@ -412,7 +418,7 @@
                   (andmap (λ (n) (>= n 0)) x)))]
         [(eq? (car tp) 'number)
          (and (integer? x)
-              (or (eq? (cadr tp) 'inf)
+              (or (eq? (cadr tp) '-inf)
                   (and (eq? (cadr tp) 'nonzero) (not (zero? x)))
                   (>= x (cadr tp))))]
         [else (boolean? x)]))
