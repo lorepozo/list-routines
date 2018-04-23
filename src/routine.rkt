@@ -134,7 +134,9 @@
 (define (generate-routines-deepen generated rand-limit)
   (append-map
     (λ (x)
-       (let ([rs (car x)] [tps (cdr x)])
+       (let* ([rs (car x)]
+              [tps (cdr x)]
+              [rs (regenerate-static-values rs tps rand-limit)])
          (append-map
            (λ (name)
               (let* ([r (subroutine-ref name)]
@@ -210,10 +212,26 @@
   (and (equal? (vector-ref (cdr a) 0) (vector-ref (cdr b) 0))
        (let ([exs-a (routine-generate-input (car a) '((count . 4)))]
              [exs-b (routine-generate-input (car b) '((count . 4)))])
-         (and
+         (and exs-a exs-b
            (andmap (λ (ex) (eq? (cdr ex) (routine-eval (car b) (car ex)))) exs-a)
-           (andmap (λ (ex) (eq? (cdr ex) (routine-eval (car a) (car ex)))) exs-b)
-           ))))
+           (andmap (λ (ex) (eq? (cdr ex) (routine-eval (car a) (car ex)))) exs-b)))))
+
+
+(define (regenerate-static-values rs tps rand-limit)
+  (let lp ([depth 5])
+    (let ([new-rs (map (λ (x)
+                          (let* ([name (car x)]
+                                 [r (subroutine-ref name)]
+                                 [new-params ((subroutine-generate-params r) rand-limit)])
+                            (cons name
+                                  (map (λ (wire new-param)
+                                          (if (eq? (car wire) 'static)
+                                            (cons 'static new-param)
+                                            wire))
+                                       (cdr x) (cons null new-params))))) rs)])
+      (cond [(routine? new-rs) new-rs]
+            [(negative? depth) rs]
+            [else (lp (sub1 depth))]))))
 
 
 ;;;;;;;;;;;;;;;;;;;;
