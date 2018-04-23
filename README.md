@@ -46,6 +46,7 @@ parametric. See existing routine implementations for examples.
 
 ## TODO
 
-- [ ] Change list type to have each-number-at-least-sum-of, which is empty for -inf
-- [ ] Input should be capable of getting more restrictive during generation
+- [ ] Change list type to have each-number-at-least-sum-of, which is empty for -inf.
+- [ ] Input should be capable of getting more restrictive during generation.
 - [ ] X-head-in-tail meta-subroutine.
+- [ ] Implement a metric on routine difficulty.
