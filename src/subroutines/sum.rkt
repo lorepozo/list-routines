@@ -4,7 +4,7 @@
 (require "../prelude.rkt")
 
 (define input '(int-list))
-(define output '(nonnegative))
+(define output '(int))
 (define params '())
 
 (define description "adds all elements of the list.")
