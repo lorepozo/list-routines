@@ -12,15 +12,15 @@
                        #:len-default [len-default (λ _ (random 8))])
   (λ (params)
      (let* ([lenp (assoc 'len params)]
-            [len (or (and lenp (len-valid (cdr lenp) params) (cdr lenp))
-                     (len-default params))]
             [countp (assoc 'count params)]
             [count (or (and countp (positive? (cdr countp)) (cdr countp))
                        1)])
        (let lp ([count count])
-         (if (> count 0)
+         (let ([len (or (and lenp (len-valid (cdr lenp) params) (cdr lenp))
+                        (len-default params))])
+           (if (> count 0)
              (cons (generate-one params len) (lp (- count 1)))
-             null)))))
+             null))))))
 
 (define (random-list
           #:len len
