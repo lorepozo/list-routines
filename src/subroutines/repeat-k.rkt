@@ -17,7 +17,7 @@
     ((k . 5))))
 
 (define (evaluate l params)
-  (let ([k (assoc 'k params)])
+  (let ([k (cdr (assoc 'k params))])
     (append-map (λ _ l) (range k))))
 
 (define generate (generate-many

@@ -17,37 +17,30 @@ TOP = """#lang racket/base
          subroutine-generate-input
          subroutine-generate-params)
 
+(require racket/list)
+(require "type.rkt")
+
 (struct subroutine (input output params description deps example-params evaluate generate))
 
 (define (subroutine-ref name) (hash-ref all-subroutines name))
 (define subroutine-generate-input subroutine-generate)
 (define ((subroutine-generate-params r) [rand-limit 8])
-  (if (flip 0.2) ; use example
+  (if (< (random) 0.2) ; use example
       (let* ([example-params (subroutine-example-params r)]
              [len (length example-params)])
         (if (zero? len)
             null
             (list-ref example-params (random len))))
       (map (λ (x) (cons (car x)
-                        (gen-param (cadr x) rand-limit)))
+                        (gen-param-number (as-type (cdr x)) rand-limit)))
            (subroutine-params r))))
-
-(define (gen-param tp-label rand-limit)
-  (cond [(eq? tp-label 'int)
-         (random (- rand-limit) rand-limit)]
-        [(eq? tp-label 'nonnegative)
-         (random rand-limit)]
-        [(eq? tp-label 'positive)
-         (random 1 rand-limit)]
-        [else ; (eq? tp-label 'nonzero)
-         (let lp ()
-           (let ([r (random (- rand-limit) rand-limit)])
-             (if (zero? r)
-                 (lp)
-                 r)))]))
-
-(define (flip [p 0.5])
-  (< (random) p))
+(define ((subroutine-generate-param r) param [rand-limit 8])
+  (if (< (random) 0.2) ; use example
+      (let* ([example-params (subroutine-example-params r)]
+             [params (list-ref example-params (random (length example-params)))])
+        (cdr (assoc param params)))
+      (gen-param-number (as-type (cdr (assoc param (subroutine-params r))))
+                        rand-limit)))
 
 (define all-subroutines (make-hash))
 """

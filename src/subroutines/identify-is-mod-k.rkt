@@ -5,7 +5,7 @@
 
 (define input '(int-list))
 (define output '(int-list same-length binary))
-(define params '((k . (int))))
+(define params '((k . (int nonzero))))
 
 (define description "replaces mulitples of `k` with 1, leaving all others to 0.")
 (define deps '())

@@ -5,7 +5,7 @@
 
 (define input '(int-list))
 (define output '(int-list))
-(define params '((k . (int))))
+(define params '((k . (int nonzero))))
 
 (define description "gets elements which are not divisible by `k`.")
 (define deps '("evens" "odds"))
@@ -17,7 +17,7 @@
 
 (define (evaluate l params)
   (let ([k (cdr (assoc 'k params))])
-    (filter (λ (x) (not (= (modulo x k) 0))) l))) 
+    (filter (λ (x) (not (= (modulo x k) 0))) l)))
 
 (define generate (generate-many
   (λ (params len)

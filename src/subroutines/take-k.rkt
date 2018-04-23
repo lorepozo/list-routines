@@ -18,7 +18,7 @@
     ((k . 5))))
 
 (define (evaluate l params)
-  (let ([k (assoc 'k params)])
+  (let ([k (cdr (assoc 'k params))])
     (take l k)))
 
 (define generate (generate-many
