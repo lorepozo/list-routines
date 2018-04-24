@@ -1,4 +1,4 @@
-# Routine documentation
+# Subroutine documentation
 
 * TOC
 {:toc}

@@ -44,7 +44,7 @@
                                     (map list inps outs)))
                                example-params))])
       (include-template "docs_template_subroutine_parametric.md"))
-    (let* ([examples (gen-uniq generate null)]
+    (let* ([examples (subroutine-examples subroutine)]
            [examples (map (λ (ex) (map jsexpr->string ex))
                           (map list examples (map (λ (x) (evaluate x null)) examples)))])
       (include-template "docs_template_subroutine_nonparametric.md")))))
