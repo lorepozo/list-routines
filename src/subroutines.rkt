@@ -271,6 +271,13 @@
                          evaluate generate)))
 
 (let ()
+  (local-require "subroutines/positions.rkt")
+  (hash-set! all-subroutines 'positions
+             (subroutine input output params
+                         description deps example-params
+                         evaluate generate)))
+
+(let ()
   (local-require "subroutines/pow-base-k.rkt")
   (hash-set! all-subroutines 'pow-base-k
              (subroutine input output params

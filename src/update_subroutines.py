@@ -15,6 +15,7 @@ TOP = """#lang racket/base
          subroutine-example-params
          subroutine-evaluate
          subroutine-generate-input
+         subroutine-generate-param
          subroutine-generate-params)
 
 (require racket/list)
