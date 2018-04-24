@@ -13,7 +13,7 @@
 
 (define example-params '(()))
 
-(define (evaluate i params) (range i))
+(define (evaluate i params) (range (min i 100)))
 
 (define generate (generate-many
   (λ _ (random 10))))

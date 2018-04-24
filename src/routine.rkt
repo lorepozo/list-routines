@@ -78,7 +78,7 @@
                [params (get-params-static (cddr n))]
                [params (append g-params params)])
           (let lp ([retries 5])
-            (if (zero? retries)
+            (if (negative? retries)
                 #f
                 (let ([inps ((subroutine-generate-input r) params)])
                   (if (andmap (λ (inp)
@@ -100,12 +100,24 @@
 ;;;  GENERATION  ;;;
 ;;;;;;;;;;;;;;;;;;;;
 
+(define (take-uniq lst k [same? equal?])
+  (reverse
+    (let lp ([acc null] [lst lst])
+      (if (or (empty? lst) (= (length acc) k))
+        acc
+        (let* ([v (car lst)]
+               [acc (if (andmap (λ (z) (not (same? v z))) acc)
+                      (cons v acc)
+                      acc)])
+          (lp acc (cdr lst)))))))
+
 (define (generate-routines bound [rand-limit 8])
   (if (< bound (hash-count all-subroutines))
       (generate-routines-first-round rand-limit bound)
-      (let lp ([size 1] [generated (remove-duplicates
+      (let lp ([size 1] [generated (take-uniq
                                      (generate-routines-first-round
                                        rand-limit)
+                                     bound
                                      same-routine-behavior?)])
         ; generated is list of pairs (rs . tps)
         (if (> size 7)
@@ -123,11 +135,12 @@
                        (car x)))
                   (take generated bound))
                 (lp (add1 size)
-                    (remove-duplicates
+                    (take-uniq
                       (append generated
                               (generate-routines-deepen
                                 generated
                                 rand-limit))
+                      bound
                       same-routine-behavior?)))))))
 
 ; generated is list of pairs (rs . tps)
