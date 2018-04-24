@@ -1,6 +1,7 @@
 #lang racket/base
 (provide params input output description deps example-params evaluate generate)
 
+(require racket/list)
 (require "../prelude.rkt")
 
 (define input '(int-list))

@@ -8,7 +8,7 @@
 (define params '((k . (nonzero))))
 
 (define description "checks if all numbers of the list are divisible by `k`.")
-(define deps '("evens" "odds" "identify-is-mod-k"))
+(define deps '("is-evens" "is-odds" "identify-is-mod-k"))
 
 (define example-params
   '(((k . 2))

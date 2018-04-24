@@ -8,7 +8,7 @@
 (define params '((k . (int nonzero))))
 
 (define description "gets elements which are not divisible by `k`.")
-(define deps '("evens" "odds"))
+(define deps '("is-evens" "is-odds"))
 
 (define example-params
   '(((k . 2))
