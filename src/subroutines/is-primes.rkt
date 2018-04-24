@@ -1,5 +1,5 @@
 #lang racket/base
-(provide params input output description deps example-params evaluate generate)
+(provide params input output description deps example-params examples evaluate generate)
 
 (require racket/list)
 (require "../prelude.rkt")
@@ -15,7 +15,8 @@
 (define description "checks if all numbers of the list are prime (up to 200).")
 (define deps '("identify-is-prime"))
 
-(define example-params '(()))
+(define example-params null)
+(define examples '((2) (2 0) (5 11) (5 11 12)))
 
 (define (evaluate l params) (not (not (andmap (λ (x) (member x primes)) l))))
 

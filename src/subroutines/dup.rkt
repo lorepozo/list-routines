@@ -1,5 +1,5 @@
 #lang racket/base
-(provide params input output description deps example-params evaluate generate)
+(provide params input output description deps example-params examples evaluate generate)
 
 (require racket/list)
 (require "../prelude.rkt")
@@ -11,7 +11,8 @@
 (define description "duplicates each element")
 (define deps '())
 
-(define example-params '(()))
+(define example-params null)
+(define examples '((0) (7 2 4)))
 
 (define (evaluate l params) (append-map (λ (e) (list e e)) l))
 

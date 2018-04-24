@@ -1,5 +1,5 @@
 #lang racket/base
-(provide params input output description deps example-params evaluate generate)
+(provide params input output description deps example-params examples evaluate generate)
 
 (require "../prelude.rkt")
 
@@ -10,7 +10,8 @@
 (define description "gets numbers in the list after the first number.")
 (define deps '())
 
-(define example-params '(()))
+(define example-params null)
+(define examples '((5 9 1) (12 4) (2 3 6 7)))
 
 (define (evaluate l params) (cdr l))
 

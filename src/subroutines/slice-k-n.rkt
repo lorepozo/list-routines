@@ -1,5 +1,5 @@
 #lang racket/base
-(provide params input output description deps example-params evaluate generate)
+(provide params input output description deps example-params examples evaluate generate)
 
 (require racket/list)
 (require "../prelude.rkt")
@@ -16,6 +16,7 @@
     ((k . 2) (n . 3))
     ((k . 3) (n . 3))
     ((k . 3) (n . 4))))
+(define examples #f)
 
 (define (evaluate l params)
   (let ([k (cdr (assoc 'k params))]

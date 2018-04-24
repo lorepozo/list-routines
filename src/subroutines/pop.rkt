@@ -1,5 +1,5 @@
 #lang racket/base
-(provide params input output description deps example-params evaluate generate)
+(provide params input output description deps example-params examples evaluate generate)
 
 (require racket/list)
 (require "../prelude.rkt")
@@ -11,7 +11,8 @@
 (define description "removes the last element of the list.")
 (define deps '())
 
-(define example-params '(()))
+(define example-params null)
+(define examples '((1 2 3) (0) (1 1 2 1)))
 
 (define (evaluate l params) (reverse (rest (reverse l))))
 

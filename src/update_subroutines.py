@@ -13,6 +13,7 @@ TOP = """#lang racket/base
          subroutine-description
          subroutine-deps
          subroutine-example-params
+         subroutine-examples
          subroutine-evaluate
          subroutine-generate-input
          subroutine-generate-param
@@ -21,7 +22,7 @@ TOP = """#lang racket/base
 (require racket/list)
 (require "type.rkt")
 
-(struct subroutine (input output params description deps example-params evaluate generate))
+(struct subroutine (input output params description deps example-params examples evaluate generate))
 
 (define (subroutine-ref name) (hash-ref all-subroutines name))
 (define subroutine-generate-input subroutine-generate)
@@ -51,7 +52,8 @@ EACH = """
   (local-require "subroutines/{subroutine}.rkt")
   (hash-set! all-subroutines '{subroutine}
              (subroutine input output params
-                         description deps example-params
+                         description deps
+                         example-params examples
                          evaluate generate)))
 """
 
