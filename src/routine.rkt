@@ -145,14 +145,14 @@
 
 ; generated is list of pairs (rs . tps)
 (define (generate-routines-deepen generated rand-limit)
-  (append-map
+  (append-map ; each previously generated
     (λ (x)
        (let* ([rs (car x)]
-              [tps (cdr x)]
-              [rs (regenerate-static-values rs tps rand-limit)])
-         (append-map
+              [tps (cdr x)])
+         (append-map ; each subroutine
            (λ (name)
-              (let* ([r (subroutine-ref name)]
+              (let* ([rs (regenerate-static-values rs tps rand-limit)]
+                     [r (subroutine-ref name)]
                      [arg-tp-labels (cons (subroutine-input r)
                                           (map cdr (subroutine-params r)))]
                      [arg-tps (map as-type arg-tp-labels)]
@@ -203,22 +203,35 @@
     generated))
 
 (define (generate-routines-first-round rand-limit [bound #f])
-  (map (λ (name)
-          (let* ([r (subroutine-ref name)]
-                 [node (append (list name '(dyn . 0))
-                               (map (λ (pair) (cons 'static (cdr pair)))
-                                    ((subroutine-generate-params r) rand-limit)))]
-                 [params (get-params-static (cddr node))]
-                 [inp-tp (as-type (subroutine-input r) #:params params)]
-                 [out-tp (as-type (subroutine-output r)
-                                  #:is-output #t
-                                  #:input inp-tp
-                                  #:params params)])
-            (cons (list node)
-                  (vector inp-tp out-tp))))
-       (if bound
-           (take (hash-keys all-subroutines) bound)
-           (hash-keys all-subroutines))))
+  (append-map
+    (λ (name)
+       (let ([r (subroutine-ref name)])
+         (cond [(empty? (subroutine-params r))
+                (let* ([node (list name '(dyn . 0))]
+                       [inp-tp (as-type (subroutine-input r))]
+                       [out-tp (as-type (subroutine-output r)
+                                        #:is-output #t
+                                        #:input inp-tp)])
+                  (list (cons (list node)
+                              (vector inp-tp out-tp))))
+                ]
+               [else
+                 (map (λ (params)
+                         (let* ([node (append (list name '(dyn . 0))
+                                              (map (λ (pair) (cons 'static (cdr pair)))
+                                                   params))]
+                                [inp-tp (as-type (subroutine-input r) #:params params)]
+                                [out-tp (as-type (subroutine-output r)
+                                                 #:is-output #t
+                                                 #:input inp-tp
+                                                 #:params params)])
+                           (cons (list node)
+                                 (vector inp-tp out-tp))))
+                      (subroutine-example-params r))
+                 ])))
+    (if bound
+      (take (hash-keys all-subroutines) bound)
+      (hash-keys all-subroutines))))
 
 
 (define (same-routine-behavior? a b)
