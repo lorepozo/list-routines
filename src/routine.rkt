@@ -84,7 +84,16 @@
                   (if (andmap (λ (inp)
                                  (value-has-type? inp (vector-ref tps 0) params))
                               inps)
-                      (map (λ (inp) (list inp (routine-eval rs inp))) inps)
+                      (let ([outs (map (λ (inp) (routine-eval rs inp)) inps)])
+                        (if (andmap (λ (inp out)
+                                       (and (cond [(list? inp) (andmap (λ (x) (< (abs x) 250)) inp)]
+                                                  [else (< inp 30)])
+                                            (cond [(list? out) (andmap (λ (y) (< (abs y) 250)) out)]
+                                                  [(integer? out) (< (abs out) 1000)]
+                                                  [else #t])))
+                                    inps outs)
+                          (map list inps outs)
+                          (lp (sub1 retries))))
                       (begin
                         (displayln
                           `(bad-generation
@@ -100,18 +109,20 @@
 ;;;  GENERATION  ;;;
 ;;;;;;;;;;;;;;;;;;;;
 
-(define (take-uniq lst k [same? equal?])
-  (reverse
-    (let lp ([acc null] [lst lst])
-      (if (or (empty? lst) (= (length acc) k))
-        acc
-        (let* ([v (car lst)]
-               [acc (if (andmap (λ (z) (not (same? v z))) acc)
-                      (cons v acc)
-                      acc)])
-          (lp acc (cdr lst)))))))
+(define (take-uniq lst k [same? equal?] #:uniq [uniq #f])
+  (if uniq
+    (reverse
+      (let lp ([acc null] [lst lst])
+        (if (or (empty? lst) (= (length acc) k))
+          acc
+          (let* ([v (car lst)]
+                 [acc (if (andmap (λ (z) (not (same? v z))) acc)
+                        (cons v acc)
+                        acc)])
+            (lp acc (cdr lst))))))
+    (if (> (length lst) k) (take lst k) lst)))
 
-(define (generate-routines bound [rand-limit 8])
+(define (generate-routines bound [rand-limit 8] [uniq #f])
   (if (< bound (hash-count all-subroutines))
       (generate-routines-first-round rand-limit bound)
       (let lp ([size 1] [generated (take-uniq
@@ -141,7 +152,8 @@
                                 generated
                                 rand-limit))
                       bound
-                      same-routine-behavior?)))))))
+                      same-routine-behavior?
+                      #:uniq uniq)))))))
 
 ; generated is list of pairs (rs . tps)
 (define (generate-routines-deepen generated rand-limit)
