@@ -14,7 +14,7 @@
 (define example-params null)
 (define examples '(2 4 6 9))
 
-(define (evaluate i params) (fibonacci i))
+(define (evaluate i params) (fibonacci (min i 30)))
 
 (define generate (generate-many
   (λ _ (random 1 16))))
