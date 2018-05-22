@@ -9,7 +9,8 @@
 
 (define (generate-many [generate-one (λ (_ len) (random-list #:len len))]
                        #:len-valid [len-valid (λ (len _) (>= len 0))]
-                       #:len-default [len-default (λ _ (random 8))])
+                       #:len-default [len-default (λ _ (random 8))]
+                       #:disable-uniqueness [disable-uniqueness #f])
   (λ (params)
      (let* ([lenp (assoc 'len params)]
             [countp (assoc 'count params)]
@@ -19,7 +20,14 @@
          (let ([len (or (and lenp (len-valid (cdr lenp) params) (cdr lenp))
                         (len-default params))])
            (if (> count 0)
-             (cons (generate-one params len) (lp (- count 1)))
+             (let* ([rst (lp (sub1 count))])
+               (if disable-uniqueness
+                 (cons (generate-one params len) (lp (sub1 count)))
+                 (let lp2 ()
+                   (let ([nxt (generate-one params len)])
+                     (if (not (member nxt rst))
+                       (cons nxt rst)
+                       (lp2))))))
              null))))))
 
 (define (random-list
@@ -29,7 +37,7 @@
   (let lp ([len len])
     (if (> len 0)
         (cons (random min max)
-              (lp (- len 1)))
+              (lp (sub1 len)))
         null)))
 
 (define (random-list-with-exact-occurrence

@@ -1,7 +1,8 @@
 #lang racket/base
 (provide routine?
          routine-eval
-         routine-generate-input)
+         routine-generate-input
+         routine-regenerate-static-params)
 (provide generate-routines)
 
 (require racket/list racket/vector)
@@ -104,6 +105,10 @@
                           (current-error-port))
                         (lp (sub1 retries)))))))))))
 
+(define (routine-regenerate-static-params rs [rand-limit 8])
+  (let ([tps (type-valid? rs)])
+    (regenerate-static-values rs tps rand-limit)))
+
 
 ;;;;;;;;;;;;;;;;;;;;
 ;;;  GENERATION  ;;;
@@ -123,37 +128,35 @@
     (if (> (length lst) k) (take lst k) lst)))
 
 (define (generate-routines bound [rand-limit 8] [uniq #f] [do-shuffle #t])
-  (if (< bound (hash-count all-subroutines))
-      (generate-routines-first-round rand-limit bound)
-      (let lp ([size 1] [generated (take-uniq
-                                     (generate-routines-first-round
-                                       rand-limit)
-                                     bound
-                                     same-routine-behavior?)])
-        ; generated is list of pairs (rs . tps)
-        (if (> size 7)
-            (begin
-              (displayln "requested too many routines" (current-error-port))
-              (map car generated))
-            (if (>= (length generated) bound)
-                (filter-map
-                  (λ (x)
-                     (if (not (routine? (car x)))
-                       (begin
-                         (display "discrepancy " (current-error-port))
-                         (displayln x (current-error-port))
-                         #f)
-                       (car x)))
-                  (take (if do-shuffle (shuffle generated) generated) bound))
-                (lp (add1 size)
-                    (take-uniq
-                      (append generated
-                              (generate-routines-deepen
-                                generated
-                                rand-limit))
-                      bound
-                      same-routine-behavior?
-                      #:uniq uniq)))))))
+  (let lp ([size 1] [generated (take-uniq
+                                 (let ([fst (generate-routines-first-round rand-limit)])
+                                   (if do-shuffle (shuffle fst) fst))
+                                 bound
+                                 same-routine-behavior?)])
+    ; generated is list of pairs (rs . tps)
+    (if (> size 7)
+        (begin
+          (displayln "requested too many routines" (current-error-port))
+          (map car generated))
+        (if (>= (length generated) bound)
+            (filter-map
+              (λ (x)
+                 (if (not (routine? (car x)))
+                   (begin
+                     (display "discrepancy " (current-error-port))
+                     (displayln x (current-error-port))
+                     #f)
+                   (car x)))
+              (take (if do-shuffle (shuffle generated) generated) bound))
+            (lp (add1 size)
+                (take-uniq
+                  (append generated
+                          (generate-routines-deepen
+                            generated
+                            rand-limit))
+                  bound
+                  same-routine-behavior?
+                  #:uniq uniq))))))
 
 ; generated is list of pairs (rs . tps)
 (define (generate-routines-deepen generated rand-limit)
@@ -214,7 +217,7 @@
            (hash-keys all-subroutines))))
     generated))
 
-(define (generate-routines-first-round rand-limit [bound #f])
+(define (generate-routines-first-round rand-limit)
   (append-map
     (λ (name)
        (let ([r (subroutine-ref name)])
@@ -239,11 +242,10 @@
                                                  #:params params)])
                            (cons (list node)
                                  (vector inp-tp out-tp))))
-                      (subroutine-example-params r))
+                      (append (subroutine-example-params r)
+                              (list ((subroutine-generate-params r) rand-limit #:weight 0))))
                  ])))
-    (if bound
-      (take (hash-keys all-subroutines) bound)
-      (hash-keys all-subroutines))))
+    (hash-keys all-subroutines)))
 
 
 (define (same-routine-behavior? a b)
@@ -257,19 +259,22 @@
 
 (define (regenerate-static-values rs tps rand-limit)
   (let lp ([depth 5])
-    (let ([new-rs (map (λ (x)
-                          (let* ([name (car x)]
-                                 [r (subroutine-ref name)]
-                                 [new-params ((subroutine-generate-params r) rand-limit)])
-                            (cons name
-                                  (map (λ (wire new-param)
-                                          (if (eq? (car wire) 'static)
-                                            (cons 'static new-param)
-                                            wire))
-                                       (cdr x) (cons null new-params))))) rs)])
-      (cond [(routine? new-rs) new-rs]
-            [(negative? depth) rs]
-            [else (lp (sub1 depth))]))))
+    (if (negative? depth)
+      rs
+      (let ([new-rs (map (λ (x)
+                            (let* ([name (car x)]
+                                   [r (subroutine-ref name)]
+                                   [new-params ((subroutine-generate-params r) rand-limit)])
+                              (cons name
+                                    (map (λ (wire new-param)
+                                            (if (eq? (car wire) 'static)
+                                              (cons 'static (cdr new-param))
+                                              wire))
+                                         (cdr x) (cons null new-params)))))
+                         rs)])
+        (if (and (not (equal? rs new-rs)) (routine? new-rs))
+          new-rs
+          (lp (sub1 depth)))))))
 
 
 ;;;;;;;;;;;;;;;;;;;;
@@ -342,7 +347,7 @@
                  (map cdr (subroutine-params r))))))
     rs))
 
-; returns #f if incompatible, else a list of types corresponding to each subroutine's input
+; returns #f if incompatible, else a vector of types corresponding to each subroutine's input
 (define (type-valid? rs)
   (let ([tps (make-vector (add1 (length rs)) '(any))])
     (let lp ([rs rs] [i 1])

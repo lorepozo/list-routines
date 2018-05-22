@@ -1,7 +1,9 @@
-#lang racket
+#lang racket/base
+; use this to generate static exports of samples from this dataset.
+; $ racket src/main_static.rkt --help
 
-(require json racket/cmdline)
-(require "../src/routine.rkt")
+(require racket/list racket/cmdline json)
+(require "routine.rkt")
 
 (define ROUTINE-COUNT (make-parameter 400))
 (define EXAMPLE-COUNT (make-parameter 10))
@@ -31,9 +33,7 @@
   )
 
 (define (routine-data routine)
-  (let* ([name (let ([o (open-output-string)])
-                 (display routine o)
-                 (get-output-string o))]
+  (let* ([name (with-output-to-string (λ _ (display routine)))]
          [raw-examples (routine-generate-input routine `((count . ,(EXAMPLE-COUNT))))])
     (and raw-examples ; not failure
          (ormap (λ (ex) (not (eq? (car ex) (cadr ex)))) raw-examples) ; not identity
