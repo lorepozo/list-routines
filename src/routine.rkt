@@ -122,7 +122,7 @@
             (lp acc (cdr lst))))))
     (if (> (length lst) k) (take lst k) lst)))
 
-(define (generate-routines bound [rand-limit 8] [uniq #f])
+(define (generate-routines bound [rand-limit 8] [uniq #f] [do-shuffle #t])
   (if (< bound (hash-count all-subroutines))
       (generate-routines-first-round rand-limit bound)
       (let lp ([size 1] [generated (take-uniq
@@ -144,7 +144,7 @@
                          (displayln x (current-error-port))
                          #f)
                        (car x)))
-                  (take generated bound))
+                  (take (if do-shuffle (shuffle generated) generated) bound))
                 (lp (add1 size)
                     (take-uniq
                       (append generated

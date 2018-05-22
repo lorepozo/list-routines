@@ -3,27 +3,31 @@
 (require json racket/cmdline)
 (require "../src/routine.rkt")
 
-(define ROUTINE-COUNT (make-parameter 1000))
+(define ROUTINE-COUNT (make-parameter 400))
 (define EXAMPLE-COUNT (make-parameter 10))
 (define UNIQ (make-parameter #f))
+(define DO-SHUFFLE (make-parameter #t))
 
 (command-line
   #:usage-help "list-routines static dataset generator" ""
   #:once-each
   [("-o" "--output") file
-                     "Sends output to <file>."
+                     "Sends output to <file>. (default: STDOUT)."
                      (current-output-port
                        (open-output-file file #:exists 'replace))]
   [("--routines") routine-count
-               "Generates a total of <routine-count> routines."
+               "Generates a total of <routine-count> routines. (default: 400)"
                (ROUTINE-COUNT (string->number routine-count))]
   ; TODO: non-sequential generation
   [("--examples") example-count
-               "Generates <example-count> examples for each routine."
+               "Generates <example-count> examples for each routine. (default: 10)"
                (EXAMPLE-COUNT (string->number example-count))]
   [("-u" "--ensure-unique")
                "Slower generation ensuring routines are unique."
                (UNIQ #t)]
+  [("-S" "--no-shuffle")
+               "Disables shuffling so the generated routines are consistent up to parameter bindings."
+               (DO-SHUFFLE #f)]
   )
 
 (define (routine-data routine)
@@ -54,4 +58,4 @@
            ))))))
 
 
-(write-json (filter-map routine-data (generate-routines (ROUTINE-COUNT) 8 (UNIQ))))
+(write-json (filter-map routine-data (generate-routines (ROUTINE-COUNT) 8 (UNIQ) (DO-SHUFFLE))))
