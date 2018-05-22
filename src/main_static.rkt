@@ -36,8 +36,9 @@
   (let* ([name (with-output-to-string (λ _ (display routine)))]
          [raw-examples (routine-generate-input routine `((count . ,(EXAMPLE-COUNT))))])
     (and raw-examples ; not failure
-         (ormap (λ (ex) (not (eq? (car ex) (cadr ex)))) raw-examples) ; not identity
-         (ormap (λ (ex) (not (eq? (cadar raw-examples) (cadr ex)))) raw-examples) ; not constant
+         (ormap (λ (ex) (not (equal? (car ex) (cadr ex)))) raw-examples) ; not identity
+         (or (< (length raw-examples) 2)
+             (ormap (λ (ex) (not (equal? (cadar raw-examples) (cadr ex)))) raw-examples)) ; not constant
          (let* ([io-examples (map (λ (x) (make-immutable-hash `(
                                            (i . ,(car x))
                                            (o . ,(cadr x))
