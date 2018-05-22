@@ -33,7 +33,9 @@
         [cnt (hash-ref j 'count)]
         [gen-params (hash-ref j 'gen-params (make-immutable-hash))])
     (map (λ (x) (make-immutable-hash `((i . ,(car x)) (o . ,(cadr x)))))
-         (routine-generate-input routine (hash-set gen-params 'count cnt)))))
+         (routine-generate-input
+           routine
+           (append `((count . ,cnt)) (hash-map gen-params cons))))))
 
 (define (resample-params-handler j)
   (let* ([routine (with-input-from-string (hash-ref j 'routine) read)]
