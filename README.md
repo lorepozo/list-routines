@@ -99,4 +99,20 @@ filled in depending on the operator. The following operators are defined:
 ## Routine "names"
 
 A routine name represents a directed acyclic graph that describes
-computation. For example, consider the following routine: TODO
+computation. For example, consider the following routine:
+
+```
+((max (dyn . 0))
+ (add-k (dyn . 0) (dyn . 1))
+ (mult-k (dyn . 2) (static . -6)))
+```
+
+This routine adds the maximum of its input to each element before
+multiplying by -6. A routine's name is surrounded by parentheses and
+contains a space-delimited sequence of subroutines and their connections.
+The first connection is the subroutine input, and subsequent connections
+correspond to parameters permitted by the subroutine. Connections are either
+of the form `(dyn . N)`, which refers to the output of the `N`-th subroutine
+or the overall input if `N` is 0, or `(static . K)`, which specifies that
+the parameter is set to exactly `K`. The routine output is simply the output
+of the final subroutine in its sequence.
