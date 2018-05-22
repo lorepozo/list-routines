@@ -23,11 +23,11 @@
              (let* ([rst (lp (sub1 count))])
                (if disable-uniqueness
                  (cons (generate-one params len) (lp (sub1 count)))
-                 (let lp2 ()
+                 (let lp2 ([depth 10])
                    (let ([nxt (generate-one params len)])
-                     (if (not (member nxt rst))
+                     (if (or (negative? depth) (not (member nxt rst)))
                        (cons nxt rst)
-                       (lp2))))))
+                       (lp2 (sub1 depth)))))))
              null))))))
 
 (define (random-list
