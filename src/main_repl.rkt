@@ -11,13 +11,13 @@
 ;     REST = { "routine": <ROUTINE>, "input": <list/number> }
 ;     => <output>
 ; op = generate-examples
-;     REST = { "routine": <ROUTINE>, "count": <number> }
+;     REST = { "routine": <ROUTINE>, "count": <number>, ["gen-params": <obj>={}] }
 ;     => list of {"i": <list/number>, "o": <output>}
 ; op = resample-params
 ;     REST = { "routine": <ROUTINE>, ["rand-limit": <number>=8] }
 ;     => <ROUTINE>
 ; op = generate-routines
-;     REST = { "count": <number>, ["rand-limit": <number>=8,] ["no-shuffle": <bool>=#f] }
+;     REST = { "count": <number>, ["rand-limit": <number>=8], ["no-shuffle": <bool>=#f] }
 ;     => list of <ROUTINE>
 
 (require racket/port json)
@@ -30,9 +30,10 @@
 
 (define (generate-examples-handler j)
   (let ([routine (with-input-from-string (hash-ref j 'routine) read)]
-        [cnt (hash-ref j 'count)])
+        [cnt (hash-ref j 'count)]
+        [gen-params (hash-ref j 'gen-params (make-immutable-hash))])
     (map (λ (x) (make-immutable-hash `((i . ,(car x)) (o . ,(cadr x)))))
-         (routine-generate-input routine `((count . ,cnt))))))
+         (routine-generate-input routine (hash-set gen-params 'count cnt)))))
 
 (define (resample-params-handler j)
   (let* ([routine (with-input-from-string (hash-ref j 'routine) read)]

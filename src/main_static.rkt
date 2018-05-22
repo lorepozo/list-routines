@@ -2,7 +2,7 @@
 ; use this to generate static exports of samples from this dataset.
 ; $ racket src/main_static.rkt --help
 
-(require racket/list racket/cmdline json)
+(require racket/list racket/port racket/cmdline json)
 (require "routine.rkt")
 
 (define ROUTINE-COUNT (make-parameter 400))
