@@ -47,11 +47,11 @@ shell as `racket` and via `raco`.
 There are two ways of using this dataset:
 - The **REPL**, for interactive use of the dataset, can be compiled with:
 
-  `raco exe -o list-routines-repl src/main_static.rkt`
+  `raco exe -o list-routines-repl src/main_repl.rkt`
 - The **static exporter**, for static/fixed use of the dataset, can be
   compiled with:
 
-  `raco exe -o list-routines-static src/main_repl.rkt`
+  `raco exe -o list-routines-static src/main_static.rkt`
 
 ## REPL
 
