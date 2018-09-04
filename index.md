@@ -14,9 +14,9 @@ OUTPUT:  Bool | Num | List<Num>
 ROUTINE: INPUT => OUTPUT
 ```
 
-This dataset is in the form of a [**REPL**](#repl) and a [**static
-exporter**](#static-exporter). It is currently highly experimental and
-subject to significant change.
+This dataset is in the form of a [**REPL**](#repl) and a [**COMMAND-LINE
+INTERFACE**](#cli). It is currently highly experimental and subject to
+significant change.
 
 # Technical overview
 
@@ -45,13 +45,14 @@ Install [racket](http://racket-lang.org). It should be usable from the
 shell as `racket` and via `raco`.
 
 There are two ways of using this dataset:
-- The **REPL**, for interactive use of the dataset, can be compiled with:
+- The **REPL**, for fast interactive use of the dataset, can be compiled
+  with:
 
-  `raco exe -o list-routines-repl src/main_repl.rkt`
-- The **static exporter**, for static/fixed use of the dataset, can be
+  `raco exe -o lr-repl src/main_repl.rkt`
+- The **CLI**, for static/fixed use of the dataset or one-time usage, can be
   compiled with:
 
-  `raco exe -o list-routines-static src/main_static.rkt`
+  `raco exe -o lr-cli src/main_cli.rkt`
 
 ## REPL
 
@@ -139,19 +140,19 @@ filled in depending on the operator. The following operators are defined:
   ]
   ```
 
-## Static Exporter
+## CLI
 
 If all you want is a big JSON dump of some input-output examples that
-correspond to true and somewhat-intuitive routines, use the **static
-exporter**. Once you've [built the binary](#installation), try executing it
-with `--help` to see the options. To get more complex routines, you must
-request enough routines to warrant generation of more complex ones
+correspond to true and somewhat-intuitive routines, use the `export`
+subcommand of the CLI. Once you've [built the binary](#installation), try
+executing it with `--help` to see the options. To get more complex routines,
+you must request enough routines to warrant generation of more complex ones
 ("complex" meaning composition).
 
 Here's example usage:
 
 ```sh
-$ ./list-routines-static --routines 2 --examples 5
+$ ./lr-cli export --routines 2 --examples 5
 ```
 
 ```json
@@ -180,6 +181,8 @@ $ ./list-routines-static --routines 2 --examples 5
   }
 ]
 ```
+
+Other uses of the CLI correspond exactly with the REPL above.
 
 # [Subroutine documentation](subroutines)
 
