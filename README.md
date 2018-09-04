@@ -10,7 +10,8 @@ OUTPUT:  Bool | Num | List<Num>
 ROUTINE: INPUT => OUTPUT
 ```
 
-This dataset is in the form of a **REPL** and a **static exporter**. It is
-currently highly experimental and subject to significant change.
+This dataset is in the form of a **REPL** and a **CLI** which can export
+samples of the dataset. It is currently highly experimental and subject to
+significant change.
 
 See the documentation at https://lucasem.github.io/list-routines/
