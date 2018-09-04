@@ -14,9 +14,9 @@ OUTPUT:  Bool | Num | List<Num>
 ROUTINE: INPUT => OUTPUT
 ```
 
-This dataset is in the form of a [**REPL**](#repl) and a [**COMMAND-LINE
-INTERFACE**](#cli). It is currently highly experimental and subject to
-significant change.
+This dataset is in the form of a [**REPL**](#repl) and a [**CLI**](#cli)
+which can export samples from the dataset. It is currently highly
+experimental and subject to significant change.
 
 # Technical overview
 
