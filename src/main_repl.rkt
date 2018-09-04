@@ -21,34 +21,29 @@
 ;     => list of <ROUTINE>
 
 (require racket/port json)
-(require "routine.rkt")
+(require "api.rkt")
 
 (define (evaluate-handler j)
   (let ([routine (with-input-from-string (hash-ref j 'routine) read)]
         [inp (hash-ref j 'input)])
-    (routine-eval routine inp)))
+    (evaluate routine inp)))
 
 (define (generate-examples-handler j)
   (let ([routine (with-input-from-string (hash-ref j 'routine) read)]
         [cnt (hash-ref j 'count)]
         [gen-params (hash-ref j 'gen-params (make-immutable-hash))])
-    (map (λ (x) (make-immutable-hash `((i . ,(car x)) (o . ,(cadr x)))))
-         (routine-generate-input
-           routine
-           (append `((count . ,cnt)) (hash-map gen-params cons))))))
+    (generate-examples routine cnt gen-params)))
 
 (define (resample-params-handler j)
-  (let* ([routine (with-input-from-string (hash-ref j 'routine) read)]
-         [rand-limit (hash-ref j 'rand-limit 8)]
-         [new-routine (routine-regenerate-static-params routine rand-limit)])
-    (with-output-to-string (λ _ (display new-routine)))))
+  (let ([routine (with-input-from-string (hash-ref j 'routine) read)]
+        [rand-limit (hash-ref j 'rand-limit 8)])
+    (resample-params routine rand-limit)))
 
 (define (generate-routines-handler j)
-  (let* ([cnt (hash-ref j 'count)]
-         [rand-limit (hash-ref j 'rand-limit 8)]
-         [do-shuffle (not (hash-ref j 'no-shuffle #f))]
-         [routines (generate-routines cnt rand-limit #f do-shuffle)])
-    (map (λ (r) (with-output-to-string (λ _ (display r)))) routines)))
+  (let ([cnt (hash-ref j 'count)]
+        [rand-limit (hash-ref j 'rand-limit 8)]
+        [do-shuffle (not (hash-ref j 'no-shuffle #f))])
+    (generate-routines cnt rand-limit #f do-shuffle)))
 
 (define HANDLERS (make-immutable-hash `(
   ("evaluate"          . ,evaluate-handler)
